@@ -1,0 +1,99 @@
+package tui
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/MilesChou/typemd/core"
+	"github.com/charmbracelet/lipgloss"
+)
+
+// listRow represents one visible row in the left panel.
+// It is either a group header or an object item.
+type listRow struct {
+	IsHeader   bool
+	GroupIndex int
+	Object     *core.Object // nil for headers
+}
+
+// buildGroups creates type groups from a flat list of objects, sorted by type name.
+func buildGroups(objects []*core.Object) []typeGroup {
+	groupMap := make(map[string][]*core.Object)
+	for _, obj := range objects {
+		groupMap[obj.Type] = append(groupMap[obj.Type], obj)
+	}
+
+	var groups []typeGroup
+	for name, objs := range groupMap {
+		groups = append(groups, typeGroup{
+			Name:     name,
+			Objects:  objs,
+			Expanded: true,
+		})
+	}
+	sort.Slice(groups, func(i, j int) bool {
+		return groups[i].Name < groups[j].Name
+	})
+	return groups
+}
+
+// visibleRows returns the list of rows currently visible based on expand/collapse state.
+func visibleRows(groups []typeGroup) []listRow {
+	var rows []listRow
+	for i, g := range groups {
+		rows = append(rows, listRow{IsHeader: true, GroupIndex: i})
+		if g.Expanded {
+			for _, obj := range g.Objects {
+				rows = append(rows, listRow{IsHeader: false, GroupIndex: i, Object: obj})
+			}
+		}
+	}
+	return rows
+}
+
+// clampCursor ensures cursor stays within valid range.
+func clampCursor(cursor, totalRows int) int {
+	if cursor < 0 {
+		return 0
+	}
+	if totalRows == 0 {
+		return 0
+	}
+	if cursor >= totalRows {
+		return totalRows - 1
+	}
+	return cursor
+}
+
+// renderList renders the left panel list.
+func renderList(groups []typeGroup, cursor int, focused bool, width, height int) string {
+	rows := visibleRows(groups)
+	if len(rows) == 0 {
+		return "  (no objects)"
+	}
+
+	var lines []string
+	for i, row := range rows {
+		var line string
+		if row.IsHeader {
+			g := groups[row.GroupIndex]
+			arrow := "▶"
+			if g.Expanded {
+				arrow = "▼"
+			}
+			line = fmt.Sprintf(" %s %s (%d)", arrow, g.Name, len(g.Objects))
+		} else {
+			line = fmt.Sprintf("   %s", row.Object.Filename)
+		}
+
+		if i == cursor {
+			style := lipgloss.NewStyle().Bold(true).Reverse(true)
+			line = style.Render(line)
+		}
+
+		lines = append(lines, line)
+	}
+
+	return strings.Join(lines, "\n")
+}

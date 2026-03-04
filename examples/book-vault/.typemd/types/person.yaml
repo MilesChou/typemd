@@ -1,0 +1,10 @@
+name: person
+properties:
+  - name: name
+    type: string
+  - name: books
+    type: relation
+    target: book
+    multiple: true
+    bidirectional: true
+    inverse: author

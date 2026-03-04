@@ -1,0 +1,14 @@
+name: book
+properties:
+  - name: title
+    type: string
+  - name: status
+    type: enum
+    values: [to-read, reading, done]
+  - name: rating
+    type: number
+  - name: author
+    type: relation
+    target: person
+    bidirectional: true
+    inverse: books
