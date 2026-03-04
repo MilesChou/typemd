@@ -1,8 +1,13 @@
 {
   "permissions": {
     "allow": [
+      "Bash(gh api repos/typemd/typemd/milestones:*)",
       "Bash(gh issue list:*)",
       "Bash(gh issue view:*)",
+      "Bash(gh label list:*)",
+      "Bash(gh project field-list:*)",
+      "Bash(gh project item-list:*)",
+      "Bash(gh project list:*)",
       "Bash(gh run view:*)",
       "Bash(go build:*)",
       "Bash(go fmt:*)",
