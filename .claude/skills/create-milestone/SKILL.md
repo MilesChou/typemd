@@ -16,7 +16,7 @@ Do NOT create the milestone until the user explicitly confirms. Analyze existing
 Fetch all open issues without a milestone:
 
 ```bash
-gh issue list --state open --no-milestone --json number,title,labels
+gh issue list --state open --json number,title,labels,milestone
 ```
 
 Also fetch existing milestones for context:
@@ -35,11 +35,11 @@ Based on the unassigned issues, propose a milestone:
 - **Description** — one sentence summarizing the release goal
 - **Candidate issues** — which unassigned issues fit this milestone
 
-Explain the reasoning behind the grouping. Ask for feedback one topic at a time:
+Explain the reasoning behind the grouping. Then use AskUserQuestion to collect feedback on three topics at once:
 
-1. Does the version number and goal make sense?
-2. Which issues should be included or excluded?
-3. Should a due date be set?
+1. Does the version number and goal make sense? (options: "OK", "I have a different idea")
+2. Which issues should be included or excluded? (options: "All good", "I want to adjust")
+3. Should a due date be set? (options: "No due date", "Set a due date")
 
 ### Step 3: Draft and confirm
 
@@ -50,9 +50,9 @@ Present the full milestone draft:
 - **Due date** — or none
 - **Issues to assign** — list with number and title
 
-Ask: "This is the milestone I'll create. Anything to adjust?"
+Use AskUserQuestion to confirm: "This is the milestone I'll create. Anything to adjust?" (options: "Looks good, create it", "I want to adjust")
 
-Only proceed after the user confirms.
+Only proceed after the user selects "Looks good, create it".
 
 ### Step 4: Create milestone and assign issues
 

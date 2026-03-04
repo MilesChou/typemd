@@ -23,14 +23,17 @@ Use multiple choice (via AskUserQuestion) when possible. Keep it conversational 
 
 ### Step 2: Determine labels
 
-Each issue gets **two labels** — one type and one component.
+Each issue gets **two or more labels** — one type and one or more components.
 
 **Type label** (pick one):
 
 | Label | When to use |
 |-------|-------------|
-| `enhancement` | New feature or improvement |
+| `epic` | High-level feature plan, may be broken into sub-issues |
+| `discussion` | Needs discussion before implementation |
+| `enhancement` | New feature or improvement with clear scope |
 | `bug` | Something isn't working |
+| `chore` | CI, refactoring, dependencies, project configuration |
 | `documentation` | Docs changes |
 
 **Component label** (pick one):
@@ -42,25 +45,28 @@ Each issue gets **two labels** — one type and one component.
 | `tui` | Terminal UI (`tui/`) |
 | `mcp` | MCP server (`mcp/`) |
 | `web` | Web UI (`web/`) |
+| `app` | Desktop app via Wails (`app/`) |
 
 Suggest labels based on context. Ask for confirmation if ambiguous.
 
 ### Step 3: Assign milestone
 
-Fetch open milestones via `gh api repos/typemd/typemd/milestones` and present them as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any milestone.
+Open milestones:
+
+!`gh api repos/typemd/typemd/milestones --jq '.[] | "\(.number) \(.title)"'`
+
+Present the milestones above as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any milestone.
 
 ### Step 4: Draft and confirm
 
-Present the full issue draft to the user before creating:
+Present the full issue draft to the user, then use AskUserQuestion to confirm:
 
 - **Title** — concise, plain language, no prefix
 - **Labels** — type + component
 - **Milestone** — selected milestone or none
 - **Body** — using the template below
 
-Ask: "This is the issue I'll create. Anything to adjust?"
-
-Only proceed after the user confirms.
+Use AskUserQuestion with options like "Create" and "Needs changes" to get user confirmation. Only proceed after the user confirms.
 
 ### Step 5: Create issue
 
