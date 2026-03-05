@@ -21,7 +21,7 @@ Before starting, check if work has already begun:
 gh issue view <number> --json comments --jq '.comments[].body'
 ```
 
-Look for comments matching the pattern `## 🔄 Phase N:`. Find the latest one and check its status:
+Look for comments matching the pattern `## 🔄 Phase N:`. Only Phase 3, 4, and 5 write comments. Find the latest one and check its status:
 
 - `✅ Completed` → resume from the **next** phase
 - `⏸️ Paused` or `❌ Blocked` → resume from **that** phase
@@ -35,7 +35,9 @@ If no progress comments exist, start from Phase 1.
 
 ## Comment Format
 
-Every phase writes a comment to the issue upon completion. Use this format:
+Only **Phase 3 (Design)**, **Phase 4 (Implement)**, and **Phase 5 (Verify and Ship)** write comments to the issue. Phase 1 and 2 are lightweight steps that do not require issue comments.
+
+Use this format:
 
 ```markdown
 ## 🔄 Phase N: <Phase Name>
@@ -89,7 +91,7 @@ Ask the user via AskUserQuestion:
 - **"Looks correct"** — proceed
 - **"I have additional context"** — let the user add info before proceeding
 
-**Comment content:** Requirements summary and any additional context from the user.
+**No comment** for this phase.
 
 ### Phase 2: Branch Strategy
 
@@ -109,7 +111,7 @@ Where `<slug>` is a short kebab-case summary derived from the issue title (max 5
 git checkout -b <branch-name>
 ```
 
-**Comment content:** Branch name, strategy chosen (worktree or branch).
+**No comment** for this phase.
 
 ### Phase 3: Design
 
