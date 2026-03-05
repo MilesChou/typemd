@@ -9,6 +9,10 @@ Create a GitHub issue for the TypeMD project through iterative Q&A.
 
 Do NOT create the issue until the user explicitly confirms. Ask questions one at a time to refine the idea before writing anything.
 
+## Language
+
+All issue content (title, body) MUST be written in **English**.
+
 ## Process
 
 ### Step 1: Understand the idea

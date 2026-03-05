@@ -25,6 +25,9 @@ Desktop.ini
 .worktrees
 .devbox/
 
+# GoReleaser
+dist/
+
 # AI
 .claude/settings.local.json
 .mcp.json
