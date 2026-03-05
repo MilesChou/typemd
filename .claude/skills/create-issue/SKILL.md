@@ -41,25 +41,27 @@ Compare the new idea against existing issues by title and topic. If a similar is
 
 Skip this step only if the user has already referenced a specific issue number in their request.
 
-### Step 3: Determine labels
+### Step 3: Determine issue type
 
-Each issue gets **two or more labels** — one type and one or more components.
+Each issue gets exactly **one issue type**. Issue types replace the old type labels (`bug`, `enhancement`, `epic`, `chore`).
 
-**Type label** (pick one):
+| Issue Type | ID | When to use |
+|---|---|---|
+| Task | `IT_kwDOD9OO7M4B4kKu` | CI, refactoring, dependencies, project configuration, general tasks |
+| Bug | `IT_kwDOD9OO7M4B4kKv` | Something isn't working |
+| Feature | `IT_kwDOD9OO7M4B4kKw` | New feature or improvement with clear scope |
+| Epic | `IT_kwDOD9OO7M4B4rT8` | High-level feature plan, will be broken into sub-issues |
 
-| Label | When to use |
-|-------|-------------|
-| `epic` | High-level feature plan, may be broken into sub-issues |
-| `discussion` | Needs discussion before implementation |
-| `enhancement` | New feature or improvement with clear scope |
-| `bug` | Something isn't working |
-| `chore` | CI, refactoring, dependencies, project configuration |
-| `documentation` | Docs changes |
+Suggest the type based on context. Ask for confirmation if ambiguous.
 
-**Component label** (pick one):
+### Step 4: Determine labels
+
+After setting the issue type, assign **one or more component labels**. Optionally add extra labels if applicable.
+
+**Component label** (pick one or more):
 
 | Label | Scope |
-|-------|-------|
+|---|---|
 | `core` | Core library — objects, types, relations, index (`core/`) |
 | `cli` | CLI commands (`cmd/`) |
 | `tui` | Terminal UI (`tui/`) |
@@ -67,9 +69,16 @@ Each issue gets **two or more labels** — one type and one or more components.
 | `web` | Web UI (`web/`) |
 | `app` | Desktop app via Wails (`app/`) |
 
+**Optional extra labels**:
+
+| Label | When to use |
+|---|---|
+| `discussion` | Needs discussion before implementation |
+| `documentation` | Docs changes |
+
 Suggest labels based on context. Ask for confirmation if ambiguous.
 
-### Step 4: Assign milestone
+### Step 5: Assign milestone
 
 Open milestones:
 
@@ -77,24 +86,90 @@ Open milestones:
 
 Present the milestones above as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any milestone.
 
-### Step 5: Draft and confirm
+### Step 6: Relationships (optional)
+
+Ask whether this issue has relationships to other issues. Use AskUserQuestion with options:
+
+- **"No relationships"** — skip
+- **"Sub-issue of an existing issue"** — will set a parent issue
+- **"Blocked by another issue"** — will add a blocking relationship
+
+If the user selects a relationship, ask them to specify the issue number. Look up the issue's node ID:
+
+```bash
+gh issue view <number> --json id --jq '.id'
+```
+
+Multiple relationships can be set. After the user is done, proceed to the next step.
+
+### Step 7: Draft and confirm
 
 Present the full issue draft to the user, then use AskUserQuestion to confirm:
 
 - **Title** — concise, plain language, no prefix
-- **Labels** — type + component
+- **Type** — issue type name
+- **Labels** — component + optional extra labels
 - **Milestone** — selected milestone or none
+- **Relationships** — parent issue or blocking issues, if any
 - **Body** — using the template below
 
 Use AskUserQuestion with options like "Create" and "Needs changes" to get user confirmation. Only proceed after the user confirms.
 
-### Step 6: Create issue
+### Step 8: Create issue
+
+Use GraphQL to create the issue with the issue type set:
 
 ```bash
-gh issue create --title "<title>" --label "<type>,<component>" --milestone "<milestone>" --body "<body>"
+# Get repo and milestone IDs
+REPO_ID=$(gh api repos/typemd/typemd --jq '.node_id')
+MILESTONE_ID=$(gh api repos/typemd/typemd/milestones/<number> --jq '.node_id')
+
+# Get label IDs
+LABEL_IDS=$(gh api repos/typemd/typemd/labels/<name> --jq '.node_id')
+
+gh api graphql -f query='
+mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $milestoneId: ID, $labelIds: [ID!], $parentId: ID) {
+  createIssue(input: {
+    repositoryId: $repoId
+    title: $title
+    body: $body
+    issueTypeId: $typeId
+    milestoneId: $milestoneId
+    labelIds: $labelIds
+    parentIssueId: $parentId
+  }) {
+    issue { number url }
+  }
+}
+' \
+  -f repoId="$REPO_ID" \
+  -f title="<title>" \
+  -f body="<body>" \
+  -f typeId="<issue_type_id>" \
+  -f milestoneId="$MILESTONE_ID" \
+  -f labelIds='["<label_id_1>","<label_id_2>"]' \
+  -f parentId="<parent_issue_id>"
 ```
 
-Omit `--milestone` if the user selected "None".
+Omit `milestoneId`, `labelIds`, or `parentId` parameters if not applicable.
+
+**After creation**, if there are blocking relationships, add them:
+
+```bash
+# Get the newly created issue's node ID
+ISSUE_ID=$(gh issue view <number> --json id --jq '.id')
+
+gh api graphql -f query='
+mutation($issueId: ID!, $blockingId: ID!) {
+  addBlockedBy(input: {
+    issueId: $issueId
+    blockingIssueId: $blockingId
+  }) {
+    blockedIssue { number }
+  }
+}
+' -f issueId="$ISSUE_ID" -f blockingId="<blocking_issue_id>"
+```
 
 Body template:
 
@@ -112,6 +187,6 @@ Body template:
 <what should happen>
 ```
 
-### Step 7: Confirm
+### Step 9: Confirm
 
 Return the issue URL to the user.
