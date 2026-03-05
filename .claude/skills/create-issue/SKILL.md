@@ -117,59 +117,62 @@ Use AskUserQuestion with options like "Create" and "Needs changes" to get user c
 
 ### Step 8: Create issue
 
-Use GraphQL to create the issue with the issue type set:
+Use GraphQL to create the issue with the issue type set.
+
+**IMPORTANT — use JSON file + `--input`**: The `gh api graphql -f` flag cannot pass array variables (like `labelIds`) correctly — it treats the JSON array as a single string, causing `NOT_FOUND` errors. Shell escaping of `!` in GraphQL types (e.g. `ID!`) also causes issues. Always write a JSON file with heredoc and pass it via `--input`.
 
 ```bash
 # Get repo and milestone IDs
 REPO_ID=$(gh api repos/typemd/typemd --jq '.node_id')
 MILESTONE_ID=$(gh api repos/typemd/typemd/milestones/<number> --jq '.node_id')
 
-# Get label IDs
-LABEL_IDS=$(gh api repos/typemd/typemd/labels/<name> --jq '.node_id')
+# Get label IDs (one per label)
+LABEL_ID_1=$(gh api repos/typemd/typemd/labels/<name1> --jq '.node_id')
+LABEL_ID_2=$(gh api repos/typemd/typemd/labels/<name2> --jq '.node_id')
 
-gh api graphql -f query='
-mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $milestoneId: ID, $labelIds: [ID!], $parentId: ID) {
-  createIssue(input: {
-    repositoryId: $repoId
-    title: $title
-    body: $body
-    issueTypeId: $typeId
-    milestoneId: $milestoneId
-    labelIds: $labelIds
-    parentIssueId: $parentId
-  }) {
-    issue { number url }
+# Write GraphQL request as JSON file using heredoc (avoids shell escaping issues with `!`)
+cat > /tmp/create_issue.json << 'EOF'
+{
+  "query": "mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $milestoneId: ID, $labelIds: [ID!], $parentId: ID) { createIssue(input: { repositoryId: $repoId, title: $title, body: $body, issueTypeId: $typeId, milestoneId: $milestoneId, labelIds: $labelIds, parentIssueId: $parentId }) { issue { number url } } }",
+  "variables": {
+    "repoId": "<REPO_ID>",
+    "title": "<title>",
+    "body": "<body with \\n for newlines>",
+    "typeId": "<issue_type_id>",
+    "milestoneId": "<MILESTONE_ID or null>",
+    "labelIds": ["<LABEL_ID_1>", "<LABEL_ID_2>"],
+    "parentId": null
   }
 }
-' \
-  -f repoId="$REPO_ID" \
-  -f title="<title>" \
-  -f body="<body>" \
-  -f typeId="<issue_type_id>" \
-  -f milestoneId="$MILESTONE_ID" \
-  -f labelIds='["<label_id_1>","<label_id_2>"]' \
-  -f parentId="<parent_issue_id>"
+EOF
+
+gh api graphql --input /tmp/create_issue.json
 ```
 
-Omit `milestoneId`, `labelIds`, or `parentId` parameters if not applicable.
+Omit or set to `null` the `milestoneId`, `labelIds`, or `parentId` fields if not applicable. Clean up the temp file after use with `rm -f /tmp/create_issue.json`.
 
-**After creation**, if there are blocking relationships, add them:
+**After creation**, if there are blocking relationships, add them (one per blocking issue):
 
 ```bash
 # Get the newly created issue's node ID
 ISSUE_ID=$(gh issue view <number> --json id --jq '.id')
+BLOCKING_ID=$(gh issue view <blocking_number> --json id --jq '.id')
 
-gh api graphql -f query='
-mutation($issueId: ID!, $blockingId: ID!) {
-  addBlockedBy(input: {
-    issueId: $issueId
-    blockingIssueId: $blockingId
-  }) {
-    blockedIssue { number }
+cat > /tmp/add_blocked.json << 'EOF'
+{
+  "query": "mutation($issueId: ID!, $blockingId: ID!) { addBlockedBy(input: { issueId: $issueId, blockingIssueId: $blockingId }) { clientMutationId } }",
+  "variables": {
+    "issueId": "<ISSUE_ID>",
+    "blockingId": "<BLOCKING_ID>"
   }
 }
-' -f issueId="$ISSUE_ID" -f blockingId="<blocking_issue_id>"
+EOF
+
+gh api graphql --input /tmp/add_blocked.json
+rm -f /tmp/add_blocked.json
 ```
+
+Repeat for each blocking issue. The return field is `clientMutationId` (NOT `blockedIssue`).
 
 Body template:
 
