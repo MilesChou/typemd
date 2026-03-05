@@ -1,7 +1,7 @@
 package tui
 
 import (
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 )

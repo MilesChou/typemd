@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/MilesChou/typemd/core"
-	mcpserver "github.com/MilesChou/typemd/mcp"
+	"github.com/typemd/typemd/core"
+	mcpserver "github.com/typemd/typemd/mcp"
 	"github.com/spf13/cobra"
 )
 

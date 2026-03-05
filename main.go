@@ -1,6 +1,6 @@
 package main
 
-import "github.com/MilesChou/typemd/cmd"
+import "github.com/typemd/typemd/cmd"
 
 func main() {
 	cmd.Execute()

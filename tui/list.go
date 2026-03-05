@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	"github.com/charmbracelet/lipgloss"
 )
 

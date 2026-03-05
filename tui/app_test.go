@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	tea "github.com/charmbracelet/bubbletea"
 )
 

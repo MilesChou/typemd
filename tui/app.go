@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"

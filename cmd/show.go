@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	"github.com/spf13/cobra"
 )
 

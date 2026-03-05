@@ -1,7 +1,7 @@
 package mcp
 
 import (
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	"github.com/mark3labs/mcp-go/server"
 )
 

@@ -3,7 +3,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/MilesChou/typemd/tui"
+	"github.com/typemd/typemd/tui"
 	"github.com/spf13/cobra"
 )
 

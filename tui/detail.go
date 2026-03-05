@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 )
 
 // renderBody builds the body panel content: object title + markdown body.

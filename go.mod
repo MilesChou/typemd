@@ -1,4 +1,4 @@
-module github.com/MilesChou/typemd
+module github.com/typemd/typemd
 
 go 1.25.0
 

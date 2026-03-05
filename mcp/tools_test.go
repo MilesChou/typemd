@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/MilesChou/typemd/core"
+	"github.com/typemd/typemd/core"
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 )
 
