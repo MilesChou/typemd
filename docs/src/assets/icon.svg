@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background -->
+  <rect x="32" y="32" width="448" height="448" rx="80" fill="#1a1a2e"/>
+  <!-- T (indigo) -->
+  <line x1="121" y1="181" x2="241" y2="181" stroke="#6366f1" stroke-width="34" stroke-linecap="round"/>
+  <line x1="181" y1="181" x2="181" y2="331" stroke="#6366f1" stroke-width="34" stroke-linecap="round"/>
+  <!-- M (white) -->
+  <path d="M281 331 L281 181 L336 261 L391 181 L391 331" stroke="#e2e8f0" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
