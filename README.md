@@ -26,7 +26,7 @@ TypeMD lets you think in **Objects** — books, people, ideas, meetings — conn
 - **Structured Relations** — connect objects with named, optionally bidirectional links
 - **Full-text search** — find anything across your vault
 - **Structured queries** — filter objects by type, property, or relation
-- **TUI** — lazygit-style two-panel interface powered by [Bubble Tea](https://github.com/charmbracelet/bubbletea), with auto-refresh on file changes
+- **TUI** — Three-panel interface powered by [Bubble Tea](https://github.com/charmbracelet/bubbletea), with auto-refresh on file changes
 - **MCP Server** — integrate with AI assistants via Model Context Protocol
 - **Local-first** — everything lives on your machine as plain Markdown files
 
@@ -81,6 +81,9 @@ tmd unlink book/golang-in-action author person/alan-donovan --both
 # Sync files to DB and rebuild search index
 tmd reindex
 
+# Validate schemas, objects, and relations
+tmd validate
+
 # Start MCP server for AI integration
 tmd mcp
 tmd mcp --vault /path/to/vault
@@ -107,18 +110,19 @@ Body
 ### TUI
 
 ```
-┌─ Objects ─────────┐  ┌─ Detail ──────────────────┐
-│ ▼ book (2)        │  │ book/golang-in-action     │
-│   golang-in-action│  │                           │
-│   clean-code      │  │ Properties                │
-│ ▶ person (1)      │  │   title: Go in Action     │
-│ ▶ note (3)        │  │   status: reading         │
-│                   │  │   author: → person/alan   │
-│                   │  │                           │
-│                   │  │ Body                      │
-│                   │  │   # Content here...       │
-└───────────────────┘  └───────────────────────────┘
+┌─ Objects ─────────┐  ┌─ Body ─────────────┐  ┌─ Properties ──────┐
+│ ▼ book (2)        │  │ # Notes            │  │ title: Go in      │
+│   golang-in-action│  │ A great book about │  │   Action          │
+│   clean-code      │  │ Go...              │  │ status: reading   │
+│ ▶ person (1)      │  │                    │  │ author:           │
+│ ▶ note (3)        │  │                    │  │   → person/alan   │
+│                   │  │                    │  │                   │
+│                   │  │                    │  │                   │
+│                   │  │                    │  │                   │
+└───────────────────┘  └────────────────────┘  └───────────────────┘
 ```
+
+The properties panel is hidden by default and can be toggled with `p`. On narrow terminals (< 56 columns), it auto-hides.
 
 ### TUI Controls
 
@@ -126,9 +130,12 @@ Body
 |-----|--------|
 | `↑`/`k`, `↓`/`j` | Navigate object list |
 | `Enter`/`Space` | Select object / Toggle group |
-| `Tab` | Switch between left and right panel |
+| `Tab` | Cycle focus between panels |
 | `/` | Search (FTS5 full-text search) |
 | `Esc` | Clear search results |
+| `p` | Toggle properties panel |
+| `w` | Toggle soft wrap |
+| `[`/`]` | Shrink/grow focused panel |
 | `q`/`Ctrl+C` | Quit |
 
 The TUI automatically watches the `objects/` directory and refreshes when files are created, modified, or deleted.
@@ -151,9 +158,12 @@ properties:
   - name: status
     type: enum
     values: [to-read, reading, done]
+    default: to-read
   - name: rating
     type: number
 ```
+
+Properties support an optional `default` field to specify a default value.
 
 ## Relations
 

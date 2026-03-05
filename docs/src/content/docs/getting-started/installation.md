@@ -5,12 +5,6 @@ sidebar:
   order: 2
 ---
 
-## Homebrew (macOS / Linux)
-
-```bash
-brew install typemd
-```
-
 ## From Source
 
 Make sure you have [Go](https://go.dev/) installed, then:

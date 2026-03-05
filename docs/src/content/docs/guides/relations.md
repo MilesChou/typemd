@@ -61,4 +61,4 @@ When `bidirectional: true`, this automatically updates both the book's `author` 
 tmd unlink book/golang-in-action author person/alan-donovan --both
 ```
 
-Use `--both` to remove the inverse side as well.
+Use `--both` to remove the inverse side as well. This only takes effect when the relation property has `bidirectional: true` and an `inverse` field defined in the schema.

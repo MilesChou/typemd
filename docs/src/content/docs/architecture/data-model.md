@@ -42,8 +42,10 @@ typemd/
 ├── cmd/        # CLI commands (Cobra)
 ├── tui/        # Terminal UI (Bubble Tea)
 ├── mcp/        # MCP server for AI integration
-├── site/       # Official website (Astro)
-└── docs/       # Documentation (Starlight)
+├── web/        # Web UI API (planned)
+├── app/        # Desktop app (planned)
+├── site/       # Official website (Astro) → typemd.io
+└── docs/       # Documentation (Starlight) → docs.typemd.io
 ```
 
 All interfaces share the same `core` library.

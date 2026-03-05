@@ -5,12 +5,14 @@ sidebar:
   order: 1
 ---
 
-Launches the TUI interactive interface — a lazygit-style two-panel layout for browsing objects.
+Launches the TUI interactive interface — a three-panel layout for browsing objects (list, body, and properties).
 
 ```bash
 tmd
 tmd --vault /path/to/vault
 ```
+
+The properties panel is hidden by default and can be toggled with `p`. On narrow terminals (< 56 columns), it auto-hides.
 
 ## Keyboard Shortcuts
 
@@ -19,9 +21,12 @@ tmd --vault /path/to/vault
 | `↑` / `k` | Move up (navigate list / scroll detail) |
 | `↓` / `j` | Move down (navigate list / scroll detail) |
 | `Enter` / `Space` | Select object / Toggle group |
-| `Tab` | Switch focus between panels |
+| `Tab` | Cycle focus between panels |
 | `/` | Enter search mode |
 | `Esc` | Exit search / Clear results |
+| `p` | Toggle properties panel |
+| `w` | Toggle soft wrap |
+| `[` / `]` | Shrink / grow focused panel |
 | `q` / `Ctrl+C` | Quit |
 
 ## Auto-refresh

@@ -19,7 +19,7 @@ This creates the `.typemd/` directory structure and SQLite database in the curre
 tmd
 ```
 
-This launches the lazygit-style two-panel interface for browsing your vault.
+This launches the three-panel interface for browsing your vault.
 
 ## 3. Create Your First Object
 

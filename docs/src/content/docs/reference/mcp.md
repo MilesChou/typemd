@@ -16,5 +16,5 @@ tmd mcp --vault /path/to/vault
 
 | Tool | Description |
 |------|-------------|
-| `search` | Full-text search objects, returns ID, type, and filename |
-| `get_object` | Get full object detail by ID, including properties and body |
+| `search` | Full-text search objects; returns `id`, `type`, and `filename` |
+| `get_object` | Get full object detail by ID; returns `id`, `type`, `filename`, `properties`, and `body` |
