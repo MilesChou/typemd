@@ -25,7 +25,23 @@ Ask the user what they want to achieve. One question at a time:
 
 Use multiple choice (via AskUserQuestion) when possible. Keep it conversational — skip questions that are already answered from context.
 
-### Step 2: Determine labels
+### Step 2: Check for duplicates
+
+Before proceeding, search existing issues for potential duplicates:
+
+```bash
+gh issue list --state all --json number,title,state,labels --limit 100
+```
+
+Compare the new idea against existing issues by title and topic. If a similar issue exists, present it to the user via AskUserQuestion with options:
+
+- **"It's a duplicate"** — stop and link to the existing issue
+- **"Related but different"** — continue creating, and reference the related issue in the body
+- **"Not related"** — continue creating as normal
+
+Skip this step only if the user has already referenced a specific issue number in their request.
+
+### Step 3: Determine labels
 
 Each issue gets **two or more labels** — one type and one or more components.
 
@@ -53,7 +69,7 @@ Each issue gets **two or more labels** — one type and one or more components.
 
 Suggest labels based on context. Ask for confirmation if ambiguous.
 
-### Step 3: Assign milestone
+### Step 4: Assign milestone
 
 Open milestones:
 
@@ -61,7 +77,7 @@ Open milestones:
 
 Present the milestones above as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any milestone.
 
-### Step 4: Draft and confirm
+### Step 5: Draft and confirm
 
 Present the full issue draft to the user, then use AskUserQuestion to confirm:
 
@@ -72,7 +88,7 @@ Present the full issue draft to the user, then use AskUserQuestion to confirm:
 
 Use AskUserQuestion with options like "Create" and "Needs changes" to get user confirmation. Only proceed after the user confirms.
 
-### Step 5: Create issue
+### Step 6: Create issue
 
 ```bash
 gh issue create --title "<title>" --label "<type>,<component>" --milestone "<milestone>" --body "<body>"
@@ -96,6 +112,6 @@ Body template:
 <what should happen>
 ```
 
-### Step 6: Confirm
+### Step 7: Confirm
 
 Return the issue URL to the user.
