@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/MilesChou/typemd/core"
@@ -17,13 +18,14 @@ func setupTestModel(t *testing.T) model {
 	}
 	groups := buildGroups(objects)
 	return model{
-		focus:       focusLeft,
-		groups:      groups,
-		cursor:      0,
-		selected:    groups[0].Objects[0],
-		searchInput: initSearchInput(),
-		width:       80,
-		height:      24,
+		focus:        focusLeft,
+		groups:       groups,
+		cursor:       0,
+		selected:     groups[0].Objects[0],
+		propsVisible: false,
+		searchInput:  initSearchInput(),
+		width:        120,
+		height:       24,
 	}
 }
 
@@ -43,8 +45,8 @@ func TestModel_TabSwitchFocus(t *testing.T) {
 	msg := tea.KeyMsg{Type: tea.KeyTab}
 	newM, _ := m.Update(msg)
 	updated := newM.(model)
-	if updated.focus != focusRight {
-		t.Errorf("focus = %d, want focusRight", updated.focus)
+	if updated.focus != focusBody {
+		t.Errorf("focus = %d, want focusBody(%d)", updated.focus, focusBody)
 	}
 }
 
@@ -142,6 +144,98 @@ func TestScrollOffset_CursorFollows(t *testing.T) {
 	}
 }
 
+func TestRenderBody_WithContent(t *testing.T) {
+	obj := &core.Object{
+		ID:         "book/test",
+		Type:       "book",
+		Filename:   "test",
+		Properties: map[string]any{"title": "Test"},
+		Body:       "# Hello\nWorld",
+	}
+	result := renderBody(obj)
+	if !strings.Contains(result, "book/test") {
+		t.Error("renderBody should contain object ID as title")
+	}
+	if !strings.Contains(result, "# Hello") {
+		t.Error("renderBody should contain body content")
+	}
+	if strings.Contains(result, "title:") {
+		t.Error("renderBody should NOT contain properties")
+	}
+}
+
+func TestRenderBody_Nil(t *testing.T) {
+	result := renderBody(nil)
+	if !strings.Contains(result, "Select an object") {
+		t.Error("renderBody(nil) should show placeholder")
+	}
+}
+
+func TestRenderBody_EmptyBody(t *testing.T) {
+	obj := &core.Object{ID: "book/test", Body: ""}
+	result := renderBody(obj)
+	if !strings.Contains(result, "(empty)") {
+		t.Error("renderBody with empty body should show (empty)")
+	}
+}
+
+func TestRenderProperties_WithSchema(t *testing.T) {
+	obj := &core.Object{
+		ID:         "book/test",
+		Properties: map[string]any{"title": "Go", "status": "reading"},
+	}
+	schema := &core.TypeSchema{
+		Properties: []core.Property{
+			{Name: "title", Type: "string"},
+			{Name: "status", Type: "string"},
+		},
+	}
+	result := renderProperties(obj, nil, schema)
+	if !strings.Contains(result, "title: Go") {
+		t.Error("renderProperties should contain title property")
+	}
+	if !strings.Contains(result, "status: reading") {
+		t.Error("renderProperties should contain status property")
+	}
+}
+
+func TestRenderProperties_Nil(t *testing.T) {
+	result := renderProperties(nil, nil, nil)
+	if result != "" {
+		t.Errorf("renderProperties(nil) should return empty string, got %q", result)
+	}
+}
+
+func TestRenderProperties_WithRelation(t *testing.T) {
+	obj := &core.Object{
+		ID:         "book/test",
+		Properties: map[string]any{"author": "person/alan"},
+	}
+	schema := &core.TypeSchema{
+		Properties: []core.Property{
+			{Name: "author", Type: "relation"},
+		},
+	}
+	result := renderProperties(obj, nil, schema)
+	if !strings.Contains(result, "→") {
+		t.Error("renderProperties should show arrow for relation properties")
+	}
+}
+
+func TestRenderProperties_ReverseRelation(t *testing.T) {
+	obj := &core.Object{
+		ID:         "person/alan",
+		Properties: map[string]any{},
+	}
+	relations := []core.Relation{
+		{Name: "author", FromID: "book/test", ToID: "person/alan"},
+	}
+	result := renderProperties(obj, relations, nil)
+	if !strings.Contains(result, "←") {
+		t.Error("renderProperties should show reverse arrow for reverse relations")
+	}
+}
+
 func TestBuildGroups_DefaultCollapse(t *testing.T) {
 	objects := []*core.Object{
 		{ID: "book/a", Type: "book", Filename: "a"},
@@ -152,5 +246,203 @@ func TestBuildGroups_DefaultCollapse(t *testing.T) {
 		if g.Expanded {
 			t.Errorf("expected %q to be collapsed by default", g.Name)
 		}
+	}
+}
+
+func TestModel_TabCyclesThreePanels(t *testing.T) {
+	m := setupTestModel(t)
+	m.propsVisible = true // enable props for three-panel cycling
+	tab := tea.KeyMsg{Type: tea.KeyTab}
+
+	// Left → Body
+	newM, _ := m.Update(tab)
+	m = newM.(model)
+	if m.focus != focusBody {
+		t.Errorf("after 1st tab: focus = %d, want focusBody(%d)", m.focus, focusBody)
+	}
+
+	// Body → Props
+	newM, _ = m.Update(tab)
+	m = newM.(model)
+	if m.focus != focusProps {
+		t.Errorf("after 2nd tab: focus = %d, want focusProps(%d)", m.focus, focusProps)
+	}
+
+	// Props → Left
+	newM, _ = m.Update(tab)
+	m = newM.(model)
+	if m.focus != focusLeft {
+		t.Errorf("after 3rd tab: focus = %d, want focusLeft(%d)", m.focus, focusLeft)
+	}
+}
+
+func TestModel_TabSkipsPropsWhenHidden(t *testing.T) {
+	m := setupTestModel(t) // propsVisible defaults to false
+	tab := tea.KeyMsg{Type: tea.KeyTab}
+
+	// Left → Body
+	newM, _ := m.Update(tab)
+	m = newM.(model)
+	if m.focus != focusBody {
+		t.Errorf("after 1st tab: focus = %d, want focusBody(%d)", m.focus, focusBody)
+	}
+
+	// Body → Left (skip Props)
+	newM, _ = m.Update(tab)
+	m = newM.(model)
+	if m.focus != focusLeft {
+		t.Errorf("after 2nd tab: focus = %d, want focusLeft(%d)", m.focus, focusLeft)
+	}
+}
+
+func TestModel_PropsWidthDefault(t *testing.T) {
+	m := setupTestModel(t)
+	msg := tea.WindowSizeMsg{Width: 120, Height: 40}
+	newM, _ := m.Update(msg)
+	updated := newM.(model)
+
+	if updated.propsWidth < 20 || updated.propsWidth > 40 {
+		t.Errorf("propsWidth = %d, want between 20 and 40", updated.propsWidth)
+	}
+}
+
+func TestModel_ThreePanelView_NotEmpty(t *testing.T) {
+	m := setupTestModel(t)
+	msg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(msg)
+	m = newM.(model)
+
+	view := m.View()
+	if view == "Loading..." {
+		t.Error("View should not be Loading after WindowSizeMsg")
+	}
+	if len(view) == 0 {
+		t.Error("View should not be empty")
+	}
+}
+
+func TestModel_AutoHidePropsNarrowTerminal(t *testing.T) {
+	m := setupTestModel(t)
+	m.propsVisible = true // start with props visible
+	msg := tea.WindowSizeMsg{Width: 50, Height: 24}
+	newM, _ := m.Update(msg)
+	updated := newM.(model)
+
+	if updated.propsVisible {
+		t.Error("propsVisible should be auto-hidden on narrow terminal (width=50)")
+	}
+}
+
+func TestModel_ResizeLeftPanel(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+	m.focus = focusLeft
+
+	before := m.leftW
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{']'}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if m.leftW != before+2 {
+		t.Errorf("leftW = %d, want %d (grew by 2)", m.leftW, before+2)
+	}
+}
+
+func TestModel_ResizeBodyPanel(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+	m.focus = focusBody
+	m.propsVisible = true
+	m.propsWidth = 30
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{']'}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	// Growing body shrinks props
+	if m.propsWidth != 28 {
+		t.Errorf("propsWidth = %d, want 28 (body grow shrinks props)", m.propsWidth)
+	}
+}
+
+func TestModel_ResizePanelGrow(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+	m.focus = focusProps
+
+	before := m.propsWidth
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{']'}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if m.propsWidth != before+2 {
+		t.Errorf("propsWidth = %d, want %d (grew by 2)", m.propsWidth, before+2)
+	}
+}
+
+func TestModel_ResizePanelShrink(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+	m.focus = focusProps
+	// Ensure propsWidth is above minimum so shrink has room
+	m.propsWidth = 30
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'['}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if m.propsWidth != 28 {
+		t.Errorf("propsWidth = %d, want 28 (shrunk by 2)", m.propsWidth)
+	}
+}
+
+func TestModel_ToggleProperties(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+
+	if m.propsVisible {
+		t.Fatal("propsVisible should default to false")
+	}
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if !m.propsVisible {
+		t.Error("propsVisible should be true after first toggle")
+	}
+
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if m.propsVisible {
+		t.Error("propsVisible should be false after second toggle")
+	}
+}
+
+func TestModel_ToggleProps_MovesFocusWhenHiding(t *testing.T) {
+	m := setupTestModel(t)
+	sizeMsg := tea.WindowSizeMsg{Width: 120, Height: 24}
+	newM, _ := m.Update(sizeMsg)
+	m = newM.(model)
+	m.propsVisible = true
+	m.focus = focusProps
+
+	msg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}}
+	newM, _ = m.Update(msg)
+	m = newM.(model)
+
+	if m.focus == focusProps {
+		t.Error("focus should move away from focusProps when Properties is hidden")
 	}
 }
