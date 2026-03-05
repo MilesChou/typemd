@@ -109,10 +109,10 @@ Body
 │   clean-code      │  │ Properties                │
 │ ▶ person (1)      │  │   title: Go in Action     │
 │ ▶ note (3)        │  │   status: reading         │
-│                   │  │   author: → person/alan    │
+│                   │  │   author: → person/alan   │
 │                   │  │                           │
-│                   │  │ Body                       │
-│                   │  │   # Content here...        │
+│                   │  │ Body                      │
+│                   │  │   # Content here...       │
 └───────────────────┘  └───────────────────────────┘
 ```
 
