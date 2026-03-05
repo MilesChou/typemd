@@ -1,0 +1,94 @@
+package core
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"gopkg.in/yaml.v3"
+)
+
+// ValidateAllObjects queries all objects and validates properties against their type schema.
+// Returns a map of object ID to validation errors.
+func ValidateAllObjects(v *Vault) map[string][]error {
+	result := make(map[string][]error)
+	objects, err := v.QueryObjects("")
+	if err != nil {
+		return result
+	}
+	for _, obj := range objects {
+		schema, err := v.LoadType(obj.Type)
+		if err != nil {
+			result[obj.ID] = []error{fmt.Errorf("load type %q: %w", obj.Type, err)}
+			continue
+		}
+		if errs := ValidateObject(obj.Properties, schema); len(errs) > 0 {
+			result[obj.ID] = errs
+		}
+	}
+	return result
+}
+
+// ValidateRelations checks that all relation endpoints reference existing objects.
+func ValidateRelations(v *Vault) []error {
+	var errs []error
+	rows, err := v.db.Query("SELECT name, from_id, to_id FROM relations")
+	if err != nil {
+		return []error{fmt.Errorf("query relations: %w", err)}
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var name, fromID, toID string
+		if err := rows.Scan(&name, &fromID, &toID); err != nil {
+			errs = append(errs, fmt.Errorf("scan relation: %w", err))
+			continue
+		}
+		var count int
+		if err := v.db.QueryRow("SELECT count(*) FROM objects WHERE id = ?", fromID).Scan(&count); err != nil {
+			errs = append(errs, fmt.Errorf("check source %s: %w", fromID, err))
+		} else if count == 0 {
+			errs = append(errs, fmt.Errorf("%s -[%s]-> %s: source object not found", fromID, name, toID))
+		}
+		if err := v.db.QueryRow("SELECT count(*) FROM objects WHERE id = ?", toID).Scan(&count); err != nil {
+			errs = append(errs, fmt.Errorf("check target %s: %w", toID, err))
+		} else if count == 0 {
+			errs = append(errs, fmt.Errorf("%s -[%s]-> %s: target object not found", fromID, name, toID))
+		}
+	}
+	if err := rows.Err(); err != nil {
+		errs = append(errs, fmt.Errorf("iterate relations: %w", err))
+	}
+	return errs
+}
+
+// ValidateAllSchemas scans .typemd/types/*.yaml and validates each schema.
+// Returns a map of type name to validation errors.
+func ValidateAllSchemas(v *Vault) map[string][]error {
+	result := make(map[string][]error)
+	entries, err := os.ReadDir(v.TypesDir())
+	if err != nil {
+		return result
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".yaml") {
+			continue
+		}
+		typeName := strings.TrimSuffix(entry.Name(), ".yaml")
+		data, err := os.ReadFile(filepath.Join(v.TypesDir(), entry.Name()))
+		if err != nil {
+			result[typeName] = []error{fmt.Errorf("read file: %w", err)}
+			continue
+		}
+		var schema TypeSchema
+		if err := yaml.Unmarshal(data, &schema); err != nil {
+			result[typeName] = []error{fmt.Errorf("parse YAML: %w", err)}
+			continue
+		}
+		if errs := ValidateSchema(&schema); len(errs) > 0 {
+			result[typeName] = errs
+		}
+	}
+	return result
+}
