@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/MilesChou/typemd/core"
@@ -93,5 +94,63 @@ func TestClampCursor(t *testing.T) {
 	}
 	if c := clampCursor(3, 5); c != 3 {
 		t.Errorf("clampCursor(3, 5) = %d, want 3", c)
+	}
+}
+
+func TestAdjustScrollOffset(t *testing.T) {
+	// cursor above viewport — scroll up
+	if o := adjustScrollOffset(2, 5, 10); o != 2 {
+		t.Errorf("adjustScrollOffset(2,5,10) = %d, want 2", o)
+	}
+	// cursor below viewport — scroll down
+	if o := adjustScrollOffset(15, 5, 10); o != 6 {
+		t.Errorf("adjustScrollOffset(15,5,10) = %d, want 6", o)
+	}
+	// cursor within viewport — no change
+	if o := adjustScrollOffset(7, 5, 10); o != 5 {
+		t.Errorf("adjustScrollOffset(7,5,10) = %d, want 5", o)
+	}
+}
+
+func TestScrollOffset_CursorFollows(t *testing.T) {
+	var objects []*core.Object
+	for i := 0; i < 30; i++ {
+		objects = append(objects, &core.Object{
+			ID: fmt.Sprintf("note/%03d", i), Type: "note", Filename: fmt.Sprintf("%03d", i),
+		})
+	}
+	groups := buildGroups(objects)
+	groups[0].Expanded = true
+	m := model{
+		focus:       focusLeft,
+		groups:      groups,
+		cursor:      0,
+		searchInput: initSearchInput(),
+		width:       80,
+		height:      10,
+	}
+
+	for i := 0; i < 8; i++ {
+		msg := tea.KeyMsg{Type: tea.KeyDown}
+		newM, _ := m.Update(msg)
+		m = newM.(model)
+	}
+
+	contentH := m.height - 3
+	if m.scrollOffset > m.cursor || m.scrollOffset+contentH <= m.cursor {
+		t.Errorf("cursor %d not visible with scrollOffset %d and height %d", m.cursor, m.scrollOffset, contentH)
+	}
+}
+
+func TestBuildGroups_DefaultCollapse(t *testing.T) {
+	objects := []*core.Object{
+		{ID: "book/a", Type: "book", Filename: "a"},
+		{ID: "note/b", Type: "note", Filename: "b"},
+	}
+	groups := buildGroups(objects)
+	for _, g := range groups {
+		if g.Expanded {
+			t.Errorf("expected %q to be collapsed by default", g.Name)
+		}
 	}
 }

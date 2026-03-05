@@ -30,9 +30,10 @@ type model struct {
 	focus focusPanel
 
 	// Left panel
-	groups   []typeGroup
-	cursor   int
-	selected *core.Object
+	groups       []typeGroup
+	cursor       int
+	scrollOffset int
+	selected     *core.Object
 
 	// Right panel
 	viewport  viewport.Model
@@ -43,6 +44,9 @@ type model struct {
 	searchMode    bool
 	searchInput   textinput.Model
 	searchResults []*core.Object
+
+	// Settings
+	softWrap bool
 
 	// Layout
 	width  int
@@ -108,6 +112,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 
+		case "w":
+			m.softWrap = !m.softWrap
+			m.updateDetail()
+			return m, nil
+
 		case "esc":
 			// Clear search results and return to normal list
 			if m.searchResults != nil {
@@ -121,6 +130,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focus == focusLeft {
 				rows := m.currentRows()
 				m.cursor = clampCursor(m.cursor-1, len(rows))
+				m.adjustScroll()
 				m.selectCurrentRow()
 			} else {
 				m.viewport.LineUp(1)
@@ -131,6 +141,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.focus == focusLeft {
 				rows := m.currentRows()
 				m.cursor = clampCursor(m.cursor+1, len(rows))
+				m.adjustScroll()
 				m.selectCurrentRow()
 			} else {
 				m.viewport.LineDown(1)
@@ -147,6 +158,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						// Re-clamp cursor after collapse
 						newRows := m.currentRows()
 						m.cursor = clampCursor(m.cursor, len(newRows))
+						m.adjustScroll()
 					}
 					m.selectCurrentRow()
 				}
@@ -237,9 +249,42 @@ func (m *model) selectCurrentRow() {
 	}
 }
 
+// adjustScroll updates scrollOffset so cursor is always visible.
+func (m *model) adjustScroll() {
+	contentH := m.height - 3
+	m.scrollOffset = adjustScrollOffset(m.cursor, m.scrollOffset, contentH)
+}
+
+// softWrapLines wraps each line individually, preserving leading indentation on continuation lines.
+func softWrapLines(content string, width int) string {
+	lines := strings.Split(content, "\n")
+	var result []string
+	for _, line := range lines {
+		if lipgloss.Width(line) <= width {
+			result = append(result, line)
+			continue
+		}
+		// Detect leading whitespace
+		trimmed := strings.TrimLeft(line, " ")
+		indent := line[:len(line)-len(trimmed)]
+		wrapped := lipgloss.NewStyle().Width(width - lipgloss.Width(indent)).Render(trimmed)
+		for i, wl := range strings.Split(wrapped, "\n") {
+			if i == 0 {
+				result = append(result, indent+wl)
+			} else {
+				result = append(result, indent+wl)
+			}
+		}
+	}
+	return strings.Join(result, "\n")
+}
+
 // updateDetail refreshes the viewport content with current selected object.
 func (m *model) updateDetail() {
 	content := renderDetail(m.selected, m.relations, m.schema)
+	if m.softWrap && m.viewport.Width > 0 {
+		content = softWrapLines(content, m.viewport.Width)
+	}
 	m.viewport.SetContent(content)
 }
 
@@ -305,7 +350,7 @@ func (m model) View() string {
 			leftContent = strings.Join(lines, "\n")
 		}
 	} else {
-		leftContent = renderList(m.groups, m.cursor, m.focus == focusLeft, leftW, contentH)
+		leftContent = renderList(m.groups, m.cursor, m.scrollOffset, m.focus == focusLeft, leftW, contentH)
 	}
 
 	// Right panel content
@@ -324,7 +369,11 @@ func (m model) View() string {
 	} else if m.searchResults != nil {
 		helpBar = "  Search results  |  esc: clear  |  ↑↓: navigate  |  tab: switch  |  q: quit"
 	} else {
-		helpBar = "  ↑↓/jk: navigate  |  enter: select/toggle  |  tab: switch  |  /: search  |  q: quit"
+		wrapLabel := "off"
+		if m.softWrap {
+			wrapLabel = "on"
+		}
+		helpBar = fmt.Sprintf("  ↑↓/jk: navigate  |  enter: toggle  |  tab: switch  |  /: search  |  w: wrap(%s)  |  q: quit", wrapLabel)
 	}
 
 	return panels + "\n" + helpBar
