@@ -155,16 +155,14 @@ git checkout -b <branch-name>
 
 ### Phase 1: Design
 
-Invoke `superpowers:brainstorming` skill to explore the design space.
+Explore the design space collaboratively with the user:
 
-The brainstorming skill will:
-
-1. Explore project context
-2. Ask clarifying questions
-3. Propose 2-3 approaches
+1. Explore project context (files, docs, recent commits)
+2. Ask clarifying questions one at a time
+3. Propose 2-3 approaches with trade-offs and a recommendation
 4. Present design for user approval
 
-**IMPORTANT:** When brainstorming invokes `superpowers:writing-plans`, the plan output should NOT be saved to `docs/plans/`. Instead, capture the full design and implementation plan to write into the issue comment.
+**IMPORTANT:** Do NOT save design documents to `docs/plans/`. All design output is written directly to the issue comment. This keeps the design co-located with the issue for traceability and resume support.
 
 **Comment content:** The complete design — architecture decisions, approach chosen, implementation plan with steps.
 
