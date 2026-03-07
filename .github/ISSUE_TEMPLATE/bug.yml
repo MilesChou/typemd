@@ -1,0 +1,54 @@
+name: Bug
+description: An unexpected problem or behavior
+type: Bug
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the bug clearly, including what goes wrong and its impact.
+      placeholder: A clear description of what the bug is.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: What actually happens? Include error messages or unexpected output if applicable.
+      placeholder: Describe the incorrect behavior you observe.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should happen instead?
+      placeholder: Describe the correct behavior you expect.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Provide the steps to reproduce this bug.
+      placeholder: |
+        1. Run `tmd ...`
+        2. Open ...
+        3. See error ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related issues, logs, or screenshots.
+      placeholder: |
+        - #issue_number
+        - Error log or screenshot
+    validations:
+      required: false

@@ -111,7 +111,7 @@ Present the full issue draft to the user, then use AskUserQuestion to confirm:
 - **Labels** — component + optional extra labels
 - **Milestone** — selected milestone or none
 - **Relationships** — parent issue or blocking issues, if any
-- **Body** — using the template below
+- **Body** — using the body template matching the issue type (see below)
 
 Use AskUserQuestion with options like "Create" and "Needs changes" to get user confirmation. Only proceed after the user confirms.
 
@@ -174,20 +174,97 @@ rm -f /tmp/add_blocked.json
 
 Repeat for each blocking issue. The return field is `clientMutationId` (NOT `blockedIssue`).
 
-Body template:
+### Body Templates
+
+Use the template matching the issue type. Omit optional sections if the user didn't provide relevant content.
+
+**Feature** (`feature.yml`):
 
 ```markdown
 ## Summary
 
-<1-3 sentences describing the issue>
+<feature description and why it's needed>
 
 ## Current Behavior
 
-<what happens now, if applicable>
+<how things work today, optional>
 
 ## Expected Behavior
 
-<what should happen>
+<how things should work after implementation>
+
+## Open Questions
+
+<design decisions or trade-offs to discuss, optional>
+
+## References
+
+<related issues or links, optional>
+```
+
+**Bug** (`bug.yml`):
+
+```markdown
+## Problem
+
+<what the bug is and its impact>
+
+## Current Behavior
+
+<what actually happens, including errors>
+
+## Expected Behavior
+
+<what should happen instead>
+
+## Steps to Reproduce
+
+<steps to trigger the bug, optional>
+
+## References
+
+<related issues, logs, or screenshots, optional>
+```
+
+**Task** (`task.yml`):
+
+```markdown
+## Summary
+
+<task description and why it needs to be done>
+
+## Current Behavior
+
+<current state that needs to change, optional>
+
+## Expected Behavior
+
+<desired outcome after task is completed>
+
+## References
+
+<related issues or links, optional>
+```
+
+**Epic** (`epic.yml`):
+
+```markdown
+## Summary
+
+<high-level goal of this epic>
+
+## Planned Features
+
+- **Feature A** — Description
+- **Feature B** — Description
+
+## Design Considerations
+
+<architectural decisions or constraints, optional>
+
+## References
+
+<related issues or links, optional>
 ```
 
 ### Step 9: Confirm

@@ -1,0 +1,53 @@
+name: Feature
+description: A request, idea, or new functionality
+type: Feature
+labels: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the feature you'd like to see, including the problem it solves.
+      placeholder: A clear description of what this feature does and why it's needed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: How things work today without this feature (if applicable).
+      placeholder: What is the current experience or limitation?
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: How things should work after this feature is implemented.
+      placeholder: Describe the desired behavior, with examples if possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: open-questions
+    attributes:
+      label: Open Questions
+      description: Any design decisions, trade-offs, or unknowns that need discussion.
+      placeholder: |
+        - Question 1?
+        - Question 2?
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related issues, external links, or inspiration.
+      placeholder: |
+        - #issue_number
+        - https://example.com
+    validations:
+      required: false

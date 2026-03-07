@@ -1,0 +1,46 @@
+name: Epic
+description: A high-level feature plan that can be broken into sub-issues
+type: Epic
+labels: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the high-level goal of this epic.
+      placeholder: A clear description of the overall feature and its purpose.
+    validations:
+      required: true
+
+  - type: textarea
+    id: planned-features
+    attributes:
+      label: Planned Features
+      description: List the features or sub-tasks included in this epic.
+      placeholder: |
+        - **Feature A** — Description
+        - **Feature B** — Description
+    validations:
+      required: true
+
+  - type: textarea
+    id: design-considerations
+    attributes:
+      label: Design Considerations
+      description: Architectural decisions, trade-offs, or constraints to keep in mind.
+      placeholder: |
+        - Consideration 1
+        - Consideration 2
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related issues, external links, or inspiration.
+      placeholder: |
+        - #issue_number
+        - https://example.com
+    validations:
+      required: false

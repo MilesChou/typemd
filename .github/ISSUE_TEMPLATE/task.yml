@@ -1,0 +1,42 @@
+name: Task
+description: A specific piece of work
+type: Task
+labels: []
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the task and why it needs to be done.
+      placeholder: A clear description of the task and its purpose.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: How things are today (if applicable).
+      placeholder: Describe the current state that needs to change.
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should things look like after this task is completed?
+      placeholder: Describe the desired outcome, using a checklist if appropriate.
+    validations:
+      required: true
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Related issues, documentation, or external links.
+      placeholder: |
+        - #issue_number
+        - https://example.com
+    validations:
+      required: false
