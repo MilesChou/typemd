@@ -1,6 +1,10 @@
 ---
 name: resolve-issue
-description: This skill should be used when the user asks to "resolve an issue", "work on issue #N", "fix #N", "implement #N", "close #N", "tackle #N", "pick up #N", "start working on #N", or references a specific GitHub issue number they want to work on.
+description: This skill should be used when the user asks to "resolve an issue", "work on issue #N", "fix #N", "implement #N", "close #N", "tackle #N", "pick up #N", "start working on #N", "what should I work on next", or references a specific GitHub issue number they want to work on. Can also auto-select the best issue when no number is specified.
+allowed-tools:
+  - Bash(gh api repos/typemd/typemd/milestones:*)
+  - Bash(gh issue list:*)
+  - Bash(gh issue view:*)
 ---
 
 # Resolve Issue
@@ -21,7 +25,7 @@ Before starting, check if work has already begun:
 gh issue view <number> --json comments --jq '.comments[].body'
 ```
 
-Look for comments matching the pattern `## 🔄 Phase N:`. Only Phase 3, 4, and 5 write comments. Find the latest one and check its status:
+Look for comments matching the pattern `## 🔄 Phase N:`. Find the latest one and check its status:
 
 - `✅ Completed` → resume from the **next** phase
 - `⏸️ Paused` or `❌ Blocked` → resume from **that** phase
@@ -29,13 +33,13 @@ Look for comments matching the pattern `## 🔄 Phase N:`. Only Phase 3, 4, and 
 If prior progress is detected, present a summary and ask the user via AskUserQuestion:
 
 - **"Continue from Phase N"** — resume from the detected point
-- **"Start over"** — discard previous progress and begin from Phase 1
+- **"Start over"** — discard previous progress and begin from Preflight
 
-If no progress comments exist, start from Phase 1.
+If no progress comments exist, start from Preflight.
 
 ## Comment Format
 
-Only **Phase 3 (Design)**, **Phase 4 (Implement)**, and **Phase 5 (Verify and Ship)** write comments to the issue. Phase 1 and 2 are lightweight steps that do not require issue comments.
+All phases (Phase 1–3) write comments to the issue. Preflight is a lightweight step that does not require issue comments.
 
 Use this format:
 
@@ -56,9 +60,48 @@ If pausing mid-phase, write the comment with `⏸️ Paused` and include what wa
 gh issue comment <number> --body "<comment>"
 ```
 
-## Preflight Checks
+## Preflight
 
-Before entering Phase 1, verify the issue is actionable:
+Preflight covers all lightweight preparation steps before the main phases begin. No issue comments are written during this stage.
+
+### Issue Selection (when no issue number is specified)
+
+If the user does not specify an issue number, automatically select the best issue to work on.
+
+**Step 1: Find the nearest milestone**
+
+```bash
+gh api repos/typemd/typemd/milestones --jq 'sort_by(.due_on // "9999") | .[0] | {title, number, due_on}'
+```
+
+If no milestone exists, fall back to all open issues.
+
+**Step 2: List open issues in that milestone**
+
+```bash
+gh issue list --milestone "<milestone_title>" --state open --json number,title,labels,assignees,body --limit 50
+```
+
+**Step 3: Rank issues by priority**
+
+Evaluate each issue using these criteria (highest priority first):
+
+1. **Blocker** — blocks other issues (look for "blocks #N" or "blocked by #N" references in issue bodies, or issues labeled `blocker` / `priority:critical`)
+2. **High value** — labeled `priority:high`, or is a bug affecting core functionality
+3. **Low effort, high impact** — small scope issues that unblock progress (labeled `good first issue`, `quick win`, or estimated as small)
+4. **Dependencies resolved** — issues whose blockers are already closed
+
+**Step 4: Present top 3 candidates**
+
+Ask the user via AskUserQuestion with the top 3 recommended issues:
+
+- **"#N: \<title\>"** — for each candidate, include a one-line reason why it's recommended (e.g., "Blocks 3 other issues", "Critical bug", "Quick win for milestone X")
+
+The user selects one, then proceed to **Check Issue State** with that issue number.
+
+### Check Issue State
+
+Verify the issue is actionable:
 
 ```bash
 gh issue view <number> --json state,linkedBranches
@@ -66,11 +109,8 @@ gh issue view <number> --json state,linkedBranches
 
 - If the issue is **closed**, inform the user and stop.
 - If there is already an **open PR** linked to this issue, inform the user and ask whether to continue or stop.
-- If a branch matching `fix/issue-<N>-*` or `feat/issue-<N>-*` already exists, inform the user and ask whether to reuse it or create a new one.
 
-## Phases
-
-### Phase 1: Understand the Issue
+### Understand the Issue
 
 Read the issue and confirm understanding with the user.
 
@@ -91,9 +131,9 @@ Ask the user via AskUserQuestion:
 - **"Looks correct"** — proceed
 - **"I have additional context"** — let the user add info before proceeding
 
-**No comment** for this phase.
+### Branch Strategy
 
-### Phase 2: Branch Strategy
+If a branch matching `fix/issue-<N>-*` or `feat/issue-<N>-*` already exists, inform the user and ask whether to reuse it or create a new one.
 
 Ask the user how to set up the working environment via AskUserQuestion:
 
@@ -111,9 +151,9 @@ Where `<slug>` is a short kebab-case summary derived from the issue title (max 5
 git checkout -b <branch-name>
 ```
 
-**No comment** for this phase.
+## Phases
 
-### Phase 3: Design
+### Phase 1: Design
 
 Invoke `superpowers:brainstorming` skill to explore the design space.
 
@@ -128,9 +168,9 @@ The brainstorming skill will:
 
 **Comment content:** The complete design — architecture decisions, approach chosen, implementation plan with steps.
 
-### Phase 4: Implement
+### Phase 2: Implement
 
-Execute the implementation plan from Phase 3. Choose the appropriate approach:
+Execute the implementation plan from Phase 1. Choose the appropriate approach:
 
 - **TDD** (`superpowers:test-driven-development`) — when the task has clear inputs/outputs or is fixing a bug with a reproducible case
 - **Subagent-driven** (`superpowers:subagent-driven-development`) — when the plan has 3+ sequential steps that each produce testable output
@@ -148,9 +188,9 @@ When pausing mid-implementation, write a comment listing:
 
 **Comment content:** Summary of what was implemented, files changed, any deviations from the plan.
 
-### Phase 5: Verify and Ship
+### Phase 3: Verify and Ship
 
-#### 5a. Verify
+#### 3a. Verify
 
 Invoke `superpowers:verification-before-completion` to confirm:
 
@@ -158,15 +198,15 @@ Invoke `superpowers:verification-before-completion` to confirm:
 - No regressions
 - Implementation matches the plan
 
-#### 5b. Update Documentation
+#### 3b. Update Documentation
 
 Invoke `update-doc` skill to compare implementation changes against all documentation and fix discrepancies before committing.
 
-#### 5c. Commit and Push
+#### 3c. Commit and Push
 
 Invoke `git:commit-push` skill to commit and push changes.
 
-#### 5d. Open PR
+#### 3d. Open PR
 
 Create a pull request that references the issue:
 
@@ -190,7 +230,7 @@ EOF
 )"
 ```
 
-#### 5e. Final Comment
+#### 3e. Final Comment
 
 **Comment content:** Test results summary, PR URL, final status.
 
