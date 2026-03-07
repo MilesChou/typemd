@@ -104,7 +104,7 @@ The user selects one, then proceed to **Check Issue State** with that issue numb
 Verify the issue is actionable:
 
 ```bash
-gh issue view <number> --json state,linkedBranches
+gh issue view <number> --json state,closedByPullRequestsReferences
 ```
 
 - If the issue is **closed**, inform the user and stop.
@@ -115,7 +115,7 @@ gh issue view <number> --json state,linkedBranches
 Read the issue and confirm understanding with the user.
 
 ```bash
-gh issue view <number> --json title,body,issueType,labels,milestone,assignees
+gh issue view <number> --json title,body,labels,milestone,assignees
 ```
 
 Present a summary:
