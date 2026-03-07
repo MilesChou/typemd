@@ -8,6 +8,7 @@ import (
 
 	"github.com/typemd/typemd/core"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -39,7 +40,8 @@ type model struct {
 	leftW        int // adjustable width for left panel (0 = use default)
 
 	// Body panel (center)
-	bodyViewport viewport.Model
+	bodyViewport  viewport.Model
+	bodyTextarea  textarea.Model
 
 	// Properties panel (right)
 	propsViewport viewport.Model
@@ -50,7 +52,8 @@ type model struct {
 	displayProps []core.DisplayProperty
 
 	// Edit mode
-	editMode bool
+	editMode      bool
+	bodyEditStart string // textarea.Value() snapshot taken at edit entry (sanitized)
 
 	// Save state
 	dirty          bool      // unsaved in-memory changes
@@ -73,6 +76,36 @@ type model struct {
 	// Layout
 	width  int
 	height int
+}
+
+// newBodyTextarea creates a configured textarea for body editing.
+func newBodyTextarea() textarea.Model {
+	ta := textarea.New()
+	ta.ShowLineNumbers = false
+	ta.CharLimit = 0
+	ta.Prompt = " " // single-space indent matching view mode; must be set before SetWidth
+	// Remove textarea's own border — the panel border is provided by lipgloss
+	noBase := lipgloss.NewStyle()
+	ta.FocusedStyle.Base = noBase
+	ta.BlurredStyle.Base = noBase
+	return ta
+}
+
+// bodyEditHeaderLines is the number of lines renderBodyHeader() occupies above the textarea.
+const bodyEditHeaderLines = 2
+
+// resizeBodyTextarea updates the body textarea dimensions to match the current layout.
+// In edit mode, bodyEditHeaderLines are reserved for the title + separator above the textarea.
+func (m *model) resizeBodyTextarea() {
+	h := m.height - 3
+	if m.editMode {
+		h -= bodyEditHeaderLines
+	}
+	if h < 0 {
+		h = 0
+	}
+	m.bodyTextarea.SetWidth(m.bodyWidth())
+	m.bodyTextarea.SetHeight(h)
 }
 
 func (m model) Init() tea.Cmd {
@@ -118,6 +151,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bodyViewport.Height = contentHeight
 		m.propsViewport.Width = m.propsWidth
 		m.propsViewport.Height = contentHeight
+		m.resizeBodyTextarea()
 
 		m.updateDetail()
 		return m, nil
@@ -160,10 +194,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Edit mode intercepts all keys except Esc
 		if m.editMode {
 			if msg.String() == "esc" {
+				if m.focus == focusBody && m.selected != nil {
+					newBody := m.bodyTextarea.Value()
+					if newBody != m.bodyEditStart {
+						m.selected.Body = newBody
+						m.dirty = true
+						m.updateDetail()
+					}
+					m.bodyTextarea.Blur()
+				}
 				m.editMode = false
 				if m.dirty {
 					m.saveObject()
 				}
+				return m, nil
+			}
+			if m.focus == focusBody {
+				var cmd tea.Cmd
+				m.bodyTextarea, cmd = m.bodyTextarea.Update(msg)
+				return m, cmd
 			}
 			return m, nil
 		}
@@ -178,7 +227,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, textinput.Blink
 
 		case "e":
-			if m.focus == focusBody || m.focus == focusProps {
+			if m.focus == focusBody && m.selected != nil {
+				m.editMode = true
+				m.bodyTextarea.SetValue(m.selected.Body)
+				m.bodyEditStart = m.bodyTextarea.Value() // snapshot after sanitization
+				m.resizeBodyTextarea()
+				m.bodyTextarea.CursorEnd()
+				return m, m.bodyTextarea.Focus()
+			}
+			if m.focus == focusProps {
 				m.editMode = true
 			}
 			return m, nil
@@ -284,6 +341,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 	}
+	// Route remaining messages (e.g. cursor blink) to textarea when in body edit mode
+	if m.editMode && m.focus == focusBody {
+		var cmd tea.Cmd
+		m.bodyTextarea, cmd = m.bodyTextarea.Update(msg)
+		return m, cmd
+	}
 	return m, nil
 }
 
@@ -331,15 +394,20 @@ func (m *model) currentRows() []listRow {
 	return visibleRows(m.groups)
 }
 
+// refreshLoadedModTime updates loadedModTime from the file's current mtime.
+func (m *model) refreshLoadedModTime(obj *core.Object) {
+	objPath := m.vault.ObjectPath(obj.Type, obj.Filename)
+	if info, err := os.Stat(objPath); err == nil {
+		m.loadedModTime = info.ModTime()
+	}
+}
+
 // applyLoadedObject sets the selected object and updates displayProps and loadedModTime.
 // Called after a successful GetObject to avoid duplicating this pattern.
 func (m *model) applyLoadedObject(obj *core.Object) {
 	m.selected = obj
 	m.displayProps, _ = m.vault.BuildDisplayProperties(obj)
-	objPath := m.vault.ObjectPath(obj.Type, obj.Filename)
-	if info, statErr := os.Stat(objPath); statErr == nil {
-		m.loadedModTime = info.ModTime()
-	}
+	m.refreshLoadedModTime(obj)
 }
 
 // selectCurrentRow updates the selected object based on current cursor position.
@@ -376,6 +444,8 @@ func (m *model) doSave() {
 		m.saveErr = fmt.Sprintf("Save failed: %v", err)
 		return
 	}
+	// Update loadedModTime so subsequent saves don't trigger a false conflict.
+	m.refreshLoadedModTime(m.selected)
 	m.dirty = false
 	m.saveErr = ""
 	m.saveConflict = false
@@ -471,6 +541,7 @@ func (m *model) resizePanel(delta int) {
 	// Recalculate dependent widths
 	m.bodyViewport.Width = m.bodyWidth()
 	m.propsViewport.Width = m.propsWidth
+	m.bodyTextarea.SetWidth(m.bodyWidth())
 	m.updateDetail()
 }
 
@@ -625,10 +696,18 @@ func (m model) View() string {
 		leftContent = renderList(m.groups, m.cursor, m.scrollOffset, m.focus == focusLeft, leftW, contentH)
 	}
 
+	// Body panel content: header + textarea in edit mode, viewport otherwise
+	var bodyPanelContent string
+	if m.editMode && m.focus == focusBody {
+		bodyPanelContent = renderBodyHeader(m.selected, bodyW) + m.bodyTextarea.View()
+	} else {
+		bodyPanelContent = m.bodyViewport.View()
+	}
+
 	// Compose panels
 	panels := lipgloss.JoinHorizontal(lipgloss.Top,
 		leftStyle.Render(leftContent),
-		bodyStyle.Render(m.bodyViewport.View()),
+		bodyStyle.Render(bodyPanelContent),
 	)
 
 	// Properties panel (optional)
@@ -693,14 +772,19 @@ func Start(vaultPath string) error {
 		groups[0].Expanded = true
 	}
 
-	// Auto-select first object
+	// Auto-select first object and capture its mtime for conflict detection
 	var selected *core.Object
 	var displayProps []core.DisplayProperty
+	var initialModTime time.Time
 	rows := visibleRows(groups)
 	for _, row := range rows {
 		if !row.IsHeader && row.Object != nil {
 			selected = row.Object
 			displayProps, _ = v.BuildDisplayProperties(selected)
+			objPath := v.ObjectPath(selected.Type, selected.Filename)
+			if info, err := os.Stat(objPath); err == nil {
+				initialModTime = info.ModTime()
+			}
 			break
 		}
 	}
@@ -709,6 +793,8 @@ func Start(vaultPath string) error {
 	bodyVP.SetContent(renderBody(selected, 0))
 	propsVP := viewport.New(0, 0)
 	propsVP.SetContent(renderProperties(selected, displayProps))
+
+	bodyTA := newBodyTextarea()
 
 	// Set cursor to first object (skip header row)
 	initialCursor := 0
@@ -726,10 +812,12 @@ func Start(vaultPath string) error {
 		cursor:        initialCursor,
 		selected:      selected,
 		bodyViewport:  bodyVP,
+		bodyTextarea:  bodyTA,
 		propsViewport: propsVP,
 		propsVisible:  false,
 		softWrap:      true,
-		displayProps: displayProps,
+		displayProps:  displayProps,
+		loadedModTime: initialModTime,
 		searchInput:   initSearchInput(),
 	}
 
