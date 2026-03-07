@@ -4,23 +4,29 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/typemd/typemd/core"
 )
 
 // renderBody builds the body panel content: object title + markdown body.
-func renderBody(obj *core.Object) string {
+func renderBody(obj *core.Object, width int) string {
 	if obj == nil {
 		return "  Select an object to view details."
 	}
 
 	var b strings.Builder
 
-	// Title
-	b.WriteString(fmt.Sprintf(" %s\n\n", obj.DisplayID()))
+	// Title + separator (truncate to panel width, accounting for leading space)
+	title := obj.DisplayID()
+	maxWidth := width - 1 // 1 for leading space
+	if maxWidth > 0 {
+		title = runewidth.Truncate(title, maxWidth, "…")
+	}
+	titleWidth := runewidth.StringWidth(title)
+	b.WriteString(fmt.Sprintf(" %s\n", title))
+	b.WriteString(fmt.Sprintf(" %s\n", strings.Repeat("─", titleWidth)))
 
 	// Body section
-	b.WriteString(" Body\n")
-	b.WriteString(" ────\n")
 	body := strings.TrimSpace(obj.Body)
 	if body == "" {
 		b.WriteString(" (empty)\n")
