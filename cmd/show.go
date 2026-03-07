@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/typemd/typemd/core"
 )
 
 var showCmd = &cobra.Command{
@@ -56,6 +57,7 @@ Examples:
 		if body == "" {
 			fmt.Println("  (empty)")
 		} else {
+			body = core.RenderWikiLinks(body)
 			for _, line := range strings.Split(body, "\n") {
 				fmt.Printf("  %s\n", line)
 			}

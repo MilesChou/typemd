@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"regexp"
+	"strings"
 )
 
 // WikiLink represents a parsed wiki-link from markdown content.
@@ -78,6 +79,45 @@ func (v *Vault) ListWikiLinks(objectID string) ([]StoredWikiLink, error) {
 // ListBacklinks returns all wiki-links pointing to the given object.
 func (v *Vault) ListBacklinks(objectID string) ([]StoredWikiLink, error) {
 	return v.queryWikiLinks("to_id", objectID)
+}
+
+// RenderWikiLinks replaces wiki-link syntax in body with plain display text.
+// [[target|Display Text]] → Display Text
+// [[target]] → DisplayID (target with ULID suffix stripped)
+func RenderWikiLinks(body string) string {
+	return RenderWikiLinksStyled(body, nil)
+}
+
+// RenderWikiLinksStyled replaces wiki-link syntax in body with styled display text.
+// If style is non-nil, the display text is wrapped via style(text).
+func RenderWikiLinksStyled(body string, style func(string) string) string {
+	matches := wikiLinkPattern.FindAllStringSubmatchIndex(body, -1)
+	if len(matches) == 0 {
+		return body
+	}
+
+	var b strings.Builder
+	b.Grow(len(body))
+	last := 0
+	for _, loc := range matches {
+		b.WriteString(body[last:loc[0]])
+
+		target := body[loc[2]:loc[3]]
+		displayText := ""
+		if loc[4] >= 0 {
+			displayText = body[loc[4]:loc[5]]
+		}
+		if displayText == "" {
+			displayText = StripULID(target)
+		}
+		if style != nil {
+			displayText = style(displayText)
+		}
+		b.WriteString(displayText)
+		last = loc[1]
+	}
+	b.WriteString(body[last:])
+	return b.String()
 }
 
 // syncWikiLinks extracts wiki-links from an object body and stores them in the DB.

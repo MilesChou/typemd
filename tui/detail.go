@@ -8,6 +8,10 @@ import (
 	"github.com/typemd/typemd/core"
 )
 
+func wikiLinkStyle(s string) string {
+	return wikiLinkStyleBase.Render(s)
+}
+
 // renderBody builds the body panel content: object title + markdown body.
 func renderBody(obj *core.Object, width int) string {
 	if obj == nil {
@@ -31,6 +35,7 @@ func renderBody(obj *core.Object, width int) string {
 	if body == "" {
 		b.WriteString(" (empty)\n")
 	} else {
+		body = core.RenderWikiLinksStyled(body, wikiLinkStyle)
 		for _, line := range strings.Split(body, "\n") {
 			b.WriteString(fmt.Sprintf(" %s\n", line))
 		}

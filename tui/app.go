@@ -462,9 +462,9 @@ func (m model) View() string {
 	// Focus highlighting
 	switch m.focus {
 	case focusLeft:
-		leftStyle = leftStyle.BorderForeground(lipgloss.Color("63"))
+		leftStyle = leftStyle.BorderForeground(colorFocusBorder)
 	case focusBody:
-		bodyStyle = bodyStyle.BorderForeground(lipgloss.Color("63"))
+		bodyStyle = bodyStyle.BorderForeground(colorFocusBorder)
 	}
 
 	// Left panel content
@@ -502,7 +502,7 @@ func (m model) View() string {
 			Width(m.propsWidth).
 			Height(contentH)
 		if m.focus == focusProps {
-			propsStyle = propsStyle.BorderForeground(lipgloss.Color("63"))
+			propsStyle = propsStyle.BorderForeground(colorFocusBorder)
 		}
 		panels = lipgloss.JoinHorizontal(lipgloss.Top,
 			panels,
@@ -537,6 +537,7 @@ func Start(vaultPath string) error {
 	}
 
 	v := core.NewVault(vaultPath)
+	loadTheme(vaultPath)
 	if err := v.Open(); err != nil {
 		return fmt.Errorf("open vault: %w", err)
 	}

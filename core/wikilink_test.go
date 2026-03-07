@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -83,5 +84,74 @@ Also check [[person/john-doe|John Doe]].`,
 				}
 			}
 		})
+	}
+}
+
+func TestRenderWikiLinks(t *testing.T) {
+	tests := []struct {
+		name     string
+		body     string
+		expected string
+	}{
+		{
+			name:     "no links unchanged",
+			body:     "Plain text with no links.",
+			expected: "Plain text with no links.",
+		},
+		{
+			name:     "link with display text",
+			body:     "By [[person/gene-kim-01jqr3k5mpbvn8e0f2g7h9txyz|Gene Kim]].",
+			expected: "By Gene Kim.",
+		},
+		{
+			name:     "link without display text strips ULID",
+			body:     "See [[book/the-phoenix-project-01jqr3k5mpbvn8e0f2g7h9txyz]].",
+			expected: "See book/the-phoenix-project.",
+		},
+		{
+			name:     "link without ULID kept as-is",
+			body:     "See [[book/clean-code]].",
+			expected: "See book/clean-code.",
+		},
+		{
+			name:     "multiple links",
+			body:     "By [[person/gene-kim-01jqr3k5mpbvn8e0f2g7h9txyz|Gene Kim]] about [[book/the-phoenix-project-01jqr3k5mpbvn8e0f2g7h9txyz]].",
+			expected: "By Gene Kim about book/the-phoenix-project.",
+		},
+		{
+			name:     "multiline body",
+			body:     "First line.\n\nSee [[book/clean-code|Clean Code]] for more.\n\nAlso [[person/john-doe]].",
+			expected: "First line.\n\nSee Clean Code for more.\n\nAlso person/john-doe.",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := RenderWikiLinks(tt.body)
+			if got != tt.expected {
+				t.Errorf("RenderWikiLinks() =\n%q\nwant:\n%q", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestRenderWikiLinksStyled(t *testing.T) {
+	style := func(s string) string {
+		return "[" + s + "]"
+	}
+
+	body := "By [[person/gene-kim-01jqr3k5mpbvn8e0f2g7h9txyz|Gene Kim]] about [[book/clean-code]]."
+	got := RenderWikiLinksStyled(body, style)
+	expected := "By [Gene Kim] about [book/clean-code]."
+	if got != expected {
+		t.Errorf("RenderWikiLinksStyled() =\n%q\nwant:\n%q", got, expected)
+	}
+}
+
+func TestRenderWikiLinksStyled_nilStyle(t *testing.T) {
+	body := "See [[book/clean-code|Clean Code]]."
+	got := RenderWikiLinksStyled(body, nil)
+	if !strings.Contains(got, "Clean Code") {
+		t.Errorf("expected display text, got: %q", got)
 	}
 }
