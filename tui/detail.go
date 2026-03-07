@@ -16,7 +16,7 @@ func renderBody(obj *core.Object) string {
 	var b strings.Builder
 
 	// Title
-	b.WriteString(fmt.Sprintf(" %s\n\n", obj.ID))
+	b.WriteString(fmt.Sprintf(" %s\n\n", obj.DisplayID()))
 
 	// Body section
 	b.WriteString(" Body\n")
