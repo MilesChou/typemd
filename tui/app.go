@@ -48,6 +48,9 @@ type model struct {
 	// Shared detail state
 	displayProps []core.DisplayProperty
 
+	// Edit mode
+	editMode bool
+
 	// Search
 	searchMode    bool
 	searchInput   textinput.Model
@@ -129,6 +132,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, cmd
 		}
 
+		// Edit mode intercepts all keys except Esc
+		if m.editMode {
+			if msg.String() == "esc" {
+				m.editMode = false
+			}
+			return m, nil
+		}
+
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
@@ -137,6 +148,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.searchMode = true
 			m.searchInput.Focus()
 			return m, textinput.Blink
+
+		case "e":
+			if m.focus == focusBody || m.focus == focusProps {
+				m.editMode = true
+			}
+			return m, nil
 
 		case "tab":
 			switch m.focus {
@@ -480,12 +497,16 @@ func (m model) View() string {
 		Width(bodyW).
 		Height(contentH)
 
-	// Focus highlighting
+	// Focus highlighting (edit mode uses distinct border color)
+	activeBorderColor := colorFocusBorder
+	if m.editMode {
+		activeBorderColor = colorEditBorder
+	}
 	switch m.focus {
 	case focusLeft:
-		leftStyle = leftStyle.BorderForeground(colorFocusBorder)
+		leftStyle = leftStyle.BorderForeground(activeBorderColor)
 	case focusBody:
-		bodyStyle = bodyStyle.BorderForeground(colorFocusBorder)
+		bodyStyle = bodyStyle.BorderForeground(activeBorderColor)
 	}
 
 	// Left panel content
@@ -523,7 +544,7 @@ func (m model) View() string {
 			Width(m.propsWidth).
 			Height(contentH)
 		if m.focus == focusProps {
-			propsStyle = propsStyle.BorderForeground(colorFocusBorder)
+			propsStyle = propsStyle.BorderForeground(activeBorderColor)
 		}
 		panels = lipgloss.JoinHorizontal(lipgloss.Top,
 			panels,
@@ -535,10 +556,12 @@ func (m model) View() string {
 	var helpBar string
 	if m.searchMode {
 		helpBar = "  / " + m.searchInput.View()
+	} else if m.editMode {
+		helpBar = "  [EDIT]  esc: exit edit mode"
 	} else if m.searchResults != nil {
-		helpBar = "  Search results  |  esc: clear  |  ↑↓: navigate  |  tab: switch  |  q: quit"
+		helpBar = "  [VIEW]  Search results  |  esc: clear  |  ↑↓: navigate  |  tab: switch  |  q: quit"
 	} else {
-		helpBar = "  ?/h: help  |  /: search  |  q: quit"
+		helpBar = "  [VIEW]  ?/h: help  |  /: search  |  q: quit"
 	}
 
 	return panels + "\n" + helpBar
