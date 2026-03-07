@@ -131,7 +131,24 @@ Ask the user via AskUserQuestion:
 - **"Looks correct"** — proceed
 - **"I have additional context"** — let the user add info before proceeding
 
-### Branch Strategy
+## Phases
+
+### Phase 1: Design
+
+Explore the design space collaboratively with the user:
+
+1. Explore project context (files, docs, recent commits)
+2. Ask clarifying questions one at a time
+3. Propose 2-3 approaches with trade-offs and a recommendation
+4. Present design for user approval
+
+**IMPORTANT:** Do NOT save design documents to `docs/plans/`. All design output is written directly to the issue comment. This keeps the design co-located with the issue for traceability and resume support.
+
+**Comment content:** The complete design — architecture decisions, approach chosen, implementation plan with steps.
+
+### Phase 2: Implement
+
+#### Branch Strategy
 
 If a branch matching `fix/issue-<N>-*` or `feat/issue-<N>-*` already exists, inform the user and ask whether to reuse it or create a new one.
 
@@ -151,22 +168,7 @@ Where `<slug>` is a short kebab-case summary derived from the issue title (max 5
 git checkout -b <branch-name>
 ```
 
-## Phases
-
-### Phase 1: Design
-
-Explore the design space collaboratively with the user:
-
-1. Explore project context (files, docs, recent commits)
-2. Ask clarifying questions one at a time
-3. Propose 2-3 approaches with trade-offs and a recommendation
-4. Present design for user approval
-
-**IMPORTANT:** Do NOT save design documents to `docs/plans/`. All design output is written directly to the issue comment. This keeps the design co-located with the issue for traceability and resume support.
-
-**Comment content:** The complete design — architecture decisions, approach chosen, implementation plan with steps.
-
-### Phase 2: Implement
+#### Implementation
 
 Execute the implementation plan from Phase 1. Choose the appropriate approach:
 
@@ -184,35 +186,28 @@ When pausing mid-implementation, write a comment listing:
 - Steps completed from the plan
 - Remaining steps
 
+Once implementation is complete, write a comment summarizing:
+
 **Comment content:** Summary of what was implemented, files changed, any deviations from the plan.
 
 ### Phase 3: Verify and Ship
 
-#### 3a. Verify
+Execute the following steps in order, then write a single comment summarizing the outcome.
 
-Invoke `superpowers:verification-before-completion` to confirm:
+1. **Verify** — invoke `superpowers:verification-before-completion` to confirm all tests pass, no regressions, and implementation matches the plan.
 
-- All tests pass
-- No regressions
-- Implementation matches the plan
+2. **Update Documentation** — invoke `update-doc` skill to fix any discrepancies before committing.
 
-#### 3b. Update Documentation
+3. **Commit and Push** — invoke `git:commit-push` skill.
 
-Invoke `update-doc` skill to compare implementation changes against all documentation and fix discrepancies before committing.
-
-#### 3c. Commit and Push
-
-Invoke `git:commit-push` skill to commit and push changes.
-
-#### 3d. Open PR
-
-Create a pull request that references the issue:
+4. **Open PR** — create a pull request using the project's PR template at `.github/pull_request_template.md` as the body structure:
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
 ## Summary
 
-<1-3 bullet points describing what was done>
+- <bullet point 1>
+- <bullet point 2>
 
 ## Issue
 
@@ -220,15 +215,12 @@ Closes #<N>
 
 ## Test Plan
 
-<how to verify the changes>
-
----
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+- [ ] `go test ./...` — all pass
+- [ ] `go build ./...` — clean build
+- [ ] Manual: <specific manual steps>
 EOF
 )"
 ```
-
-#### 3e. Final Comment
 
 **Comment content:** Test results summary, PR URL, final status.
 
