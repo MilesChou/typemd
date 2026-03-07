@@ -1,5 +1,5 @@
 ---
-name: update-doc
+name: typemd-admin:update-doc
 description: Use when code has changed and documentation may be outdated, before releases, after adding new features or commands, or when user asks to check if docs match implementation. Symptoms include new commands without reference pages, changed UI without updated screenshots or descriptions, missing CLI flags in docs.
 allowed-tools: Read, Write, Edit
 ---

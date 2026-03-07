@@ -1,5 +1,5 @@
 ---
-name: resolve-issue
+name: typemd-admin:resolve-issue
 description: This skill should be used when the user asks to "resolve an issue", "work on issue #N", "fix #N", "implement #N", "close #N", "tackle #N", "pick up #N", "start working on #N", "what should I work on next", or references a specific GitHub issue number they want to work on. Can also auto-select the best issue when no number is specified.
 allowed-tools:
   - Bash(gh api repos/typemd/typemd/milestones:*)

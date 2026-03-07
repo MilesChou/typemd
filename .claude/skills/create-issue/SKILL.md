@@ -1,5 +1,5 @@
 ---
-name: create-issue
+name: typemd-admin:create-issue
 description: This skill should be used when the user asks to "create an issue", "open an issue", "file a bug", "request a feature", "add a task", or discusses a problem or idea that should be tracked as a GitHub issue.
 ---
 

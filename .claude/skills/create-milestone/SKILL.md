@@ -1,5 +1,5 @@
 ---
-name: create-milestone
+name: typemd-admin:create-milestone
 description: This skill should be used when the user asks to "create a milestone", "plan a release", "organize issues into a milestone", "what should the next version be", or discusses grouping open issues into a release target.
 ---
 

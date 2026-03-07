@@ -9,11 +9,13 @@
       "Bash(gh project item-list:*)",
       "Bash(gh project list:*)",
       "Bash(gh run view:*)",
+      "Bash(git check-ignore:*)",
       "Bash(go build:*)",
       "Bash(go fmt:*)",
       "Bash(go run:*)",
       "Bash(go test:*)",
-      "Bash(go vet:*)"
+      "Bash(go vet:*)",
+      "Skill(typemd-admin:*)"
     ]
   }
 }
