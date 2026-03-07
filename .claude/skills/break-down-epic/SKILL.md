@@ -1,5 +1,5 @@
 ---
-name: typemd-admin:break-down-epic
+name: break-down-epic
 description: Use when the user asks to "break down an epic", "split an epic into sub-issues", "create sub-issues for an epic", or wants to decompose a large epic issue into smaller, actionable sub-issues on GitHub.
 ---
 

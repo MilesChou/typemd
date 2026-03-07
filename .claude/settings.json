@@ -15,7 +15,11 @@
       "Bash(go run:*)",
       "Bash(go test:*)",
       "Bash(go vet:*)",
-      "Skill(typemd-admin:*)"
+      "Skill(break-down-epic)",
+      "Skill(create-issue)",
+      "Skill(create-milestone)",
+      "Skill(resolve-issue)",
+      "Skill(update-doc)"
     ]
   }
 }
