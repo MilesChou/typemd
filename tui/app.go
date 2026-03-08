@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/typemd/typemd/core"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/bubbles/viewport"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/textinput"
+	"charm.land/bubbles/v2/textarea"
+	"charm.land/bubbles/v2/viewport"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type focusPanel int
@@ -87,8 +87,10 @@ func newBodyTextarea() textarea.Model {
 	ta.Prompt = " " // single-space indent matching view mode; must be set before SetWidth
 	// Remove textarea's own border — the panel border is provided by lipgloss
 	noBase := lipgloss.NewStyle()
-	ta.FocusedStyle.Base = noBase
-	ta.BlurredStyle.Base = noBase
+	s := ta.Styles()
+	s.Focused.Base = noBase
+	s.Blurred.Base = noBase
+	ta.SetStyles(s)
 	return ta
 }
 
@@ -148,16 +150,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		// Update viewport sizes
-		m.bodyViewport.Width = m.bodyWidth()
-		m.bodyViewport.Height = contentHeight
-		m.propsViewport.Width = m.propsWidth
-		m.propsViewport.Height = contentHeight
+		m.bodyViewport.SetWidth(m.bodyWidth())
+		m.bodyViewport.SetHeight(contentHeight)
+		m.propsViewport.SetWidth(m.propsWidth)
+		m.propsViewport.SetHeight(contentHeight)
 		m.resizeBodyTextarea()
 
 		m.updateDetail()
 		return m, nil
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		// Help mode gets top priority
 		if m.showHelp {
 			switch msg.String() {
@@ -280,9 +282,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.adjustScroll()
 				m.selectCurrentRow()
 			} else if m.focus == focusBody {
-				m.bodyViewport.LineUp(1)
+				m.bodyViewport.ScrollUp(1)
 			} else if m.focus == focusProps {
-				m.propsViewport.LineUp(1)
+				m.propsViewport.ScrollUp(1)
 			}
 			return m, nil
 
@@ -293,9 +295,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.adjustScroll()
 				m.selectCurrentRow()
 			} else if m.focus == focusBody {
-				m.bodyViewport.LineDown(1)
+				m.bodyViewport.ScrollDown(1)
 			} else if m.focus == focusProps {
-				m.propsViewport.LineDown(1)
+				m.propsViewport.ScrollDown(1)
 			}
 			return m, nil
 
@@ -317,9 +319,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if contentHeight < 0 {
 				contentHeight = 0
 			}
-			m.bodyViewport.Width = m.bodyWidth()
-			m.propsViewport.Width = m.propsWidth
-			m.propsViewport.Height = contentHeight
+			m.bodyViewport.SetWidth(m.bodyWidth())
+			m.propsViewport.SetWidth(m.propsWidth)
+			m.propsViewport.SetHeight(contentHeight)
 			m.updateDetail()
 			return m, nil
 
@@ -546,8 +548,8 @@ func (m *model) resizePanel(delta int) {
 		}
 	}
 	// Recalculate dependent widths
-	m.bodyViewport.Width = m.bodyWidth()
-	m.propsViewport.Width = m.propsWidth
+	m.bodyViewport.SetWidth(m.bodyWidth())
+	m.propsViewport.SetWidth(m.propsWidth)
 	m.bodyTextarea.SetWidth(m.bodyWidth())
 	m.updateDetail()
 }
@@ -578,15 +580,15 @@ func softWrapLines(content string, width int) string {
 
 // updateDetail refreshes viewport contents with current selected object.
 func (m *model) updateDetail() {
-	bodyContent := renderBody(m.selected, m.bodyViewport.Width)
-	if m.softWrap && m.bodyViewport.Width > 0 {
-		bodyContent = softWrapLines(bodyContent, m.bodyViewport.Width)
+	bodyContent := renderBody(m.selected, m.bodyViewport.Width())
+	if m.softWrap && m.bodyViewport.Width() > 0 {
+		bodyContent = softWrapLines(bodyContent, m.bodyViewport.Width())
 	}
 	m.bodyViewport.SetContent(bodyContent)
 
 	propsContent := renderProperties(m.selected, m.displayProps)
-	if m.softWrap && m.propsViewport.Width > 0 {
-		propsContent = softWrapLines(propsContent, m.propsViewport.Width)
+	if m.softWrap && m.propsViewport.Width() > 0 {
+		propsContent = softWrapLines(propsContent, m.propsViewport.Width())
 	}
 	m.propsViewport.SetContent(propsContent)
 }
@@ -642,32 +644,41 @@ func (m model) shouldAutoHideProps() bool {
 	return m.width < minTotal
 }
 
-func (m model) View() string {
+func (m model) View() tea.View {
 	if m.width == 0 {
-		return "Loading..."
+		return tea.NewView("Loading...")
 	}
 
 	// Help overlay takes over the entire screen
 	if m.showHelp {
-		return renderHelp(m.width, m.height, m.readOnly)
+		v := tea.NewView(renderHelp(m.width, m.height, m.readOnly))
+		v.AltScreen = true
+		return v
 	}
 
 	leftW := m.leftWidth()
 	bodyW := m.bodyWidth()
-	contentH := m.height - 3 // help bar + borders
+	// In lipgloss v2, Width()/Height() set the TOTAL size including border.
+	// Internal widths (leftW, bodyW, contentH) remain content-area sizes;
+	// we add the border size (+2) when passing to the panel style.
+	contentH := m.height - 3 // content area: terminal minus help-bar minus borders
 	if contentH < 0 {
 		contentH = 0
 	}
+	panelH := contentH + 2 // total height including top + bottom border
+	bdr := 2               // left+right or top+bottom border size
 
-	// Styles
+	// Styles — MaxHeight clamps viewport content that overflows after line wrapping.
 	leftStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Width(leftW).
-		Height(contentH)
+		Width(leftW + bdr).
+		Height(panelH).
+		MaxHeight(panelH)
 	bodyStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Width(bodyW).
-		Height(contentH)
+		Width(bodyW + bdr).
+		Height(panelH).
+		MaxHeight(panelH)
 
 	// Focus highlighting (edit mode uses distinct border color)
 	activeBorderColor := colorFocusBorder
@@ -721,8 +732,9 @@ func (m model) View() string {
 	if m.propsVisible {
 		propsStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			Width(m.propsWidth).
-			Height(contentH)
+			Width(m.propsWidth + bdr).
+			Height(panelH).
+			MaxHeight(panelH)
 		if m.focus == focusProps {
 			propsStyle = propsStyle.BorderForeground(activeBorderColor)
 		}
@@ -754,7 +766,9 @@ func (m model) View() string {
 		}
 	}
 
-	return panels + "\n" + helpBar
+	v := tea.NewView(panels + "\n" + helpBar)
+	v.AltScreen = true
+	return v
 }
 
 func Start(vaultPath string, readOnly bool, reindex bool) error {
@@ -808,9 +822,9 @@ func Start(vaultPath string, readOnly bool, reindex bool) error {
 		}
 	}
 
-	bodyVP := viewport.New(0, 0)
+	bodyVP := viewport.New()
 	bodyVP.SetContent(renderBody(selected, 0))
-	propsVP := viewport.New(0, 0)
+	propsVP := viewport.New()
 	propsVP.SetContent(renderProperties(selected, displayProps))
 
 	bodyTA := newBodyTextarea()
@@ -841,7 +855,7 @@ func Start(vaultPath string, readOnly bool, reindex bool) error {
 		searchInput:   initSearchInput(),
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(m)
 	_, err = p.Run()
 	return err
 }
