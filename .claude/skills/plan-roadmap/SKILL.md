@@ -23,7 +23,7 @@ All issue comments and milestone descriptions MUST be written in **English**.
 
 ### Step 1: Gather
 
-Fetch all milestones and their issues at once:
+Fetch all milestones, their issues, and unassigned issues:
 
 ```bash
 # All milestones
@@ -32,6 +32,9 @@ gh api repos/typemd/typemd/milestones --jq '.[] | {title, number, open_issues, c
 # Open issues for each milestone (run in parallel)
 gh issue list --milestone "v<VERSION>" --state open --json number,title,labels,body --limit 50
 # Repeat for every milestone
+
+# Open issues without a milestone
+gh issue list --search "no:milestone is:open" --json number,title,labels --limit 100
 ```
 
 Run the `gh issue list` commands for all milestones in parallel to minimize latency.
@@ -81,7 +84,26 @@ Categorize each issue by effort:
 
 **Weekly budget:** ~5 working days. Target 70–80% utilization (3.5–4 days of estimated work) to allow for unexpected complexity.
 
-### Step 4: Propose rebalancing
+### Step 4: Review unassigned issues
+
+Categorize unassigned issues (no milestone) by theme:
+
+| Category | Issues | Notes |
+|----------|--------|-------|
+| e.g. Web UI | #121 + children | Large epic, needs dedicated planning |
+| e.g. Core enhancements | #74, #137, ... | Candidates for near-term milestones |
+| e.g. Discussion/design | #120, #139, ... | Need design first |
+
+Identify **candidates for near-term milestones** — issues that are:
+
+- Small or medium effort
+- Not blocked by unresolved discussions
+- Complement or extend recently shipped features
+- Fill gaps in milestones that are under budget
+
+Present candidates with recommended milestone placement. Leave remaining unassigned issues in backlog with a brief categorization summary.
+
+### Step 5: Propose rebalancing
 
 Present a report covering all milestones:
 
@@ -132,7 +154,7 @@ Present a value summary table:
 - Don't split an epic across milestones (parent and children stay together)
 - When mixing in features to add value, prefer natural pairings (e.g. upgrade + enhancement that depends on it)
 
-### Step 5: Confirm and execute
+### Step 6: Confirm and execute
 
 Use AskUserQuestion to confirm the plan. Options:
 
@@ -152,7 +174,7 @@ gh issue close <number> --comment "<reason>"
 gh api repos/typemd/typemd/milestones -f title="v<VERSION>" -f description="<description>"
 ```
 
-### Step 6: Report
+### Step 7: Report
 
 Present final state of all affected milestones:
 
