@@ -63,3 +63,16 @@ Type schema 中每個屬性都有一個資料型別：
 | `number` | 整數或浮點數 | `42`、`3.14` |
 | `enum` | 固定集合中的值 | `"reading"` |
 | `relation` | 連結到另一個 Object | `"person/alan-donovan"` |
+
+Relation 屬性的 `target`、`bidirectional`、`inverse` 和 `multiple` 欄位，請參閱 [Relation](/zh-tw/concepts/relations) 頁面。
+
+## 驗證
+
+TypeMD 採用寬鬆驗證：
+
+- 只驗證 schema 中定義的屬性
+- 允許額外屬性（不在 schema 中的）
+- 缺少的屬性不會產生錯誤
+- `enum` 的值必須在 `values` 清單中
+- `number` 必須是數值
+- `relation` 的目標會檢查 Type 是否正確

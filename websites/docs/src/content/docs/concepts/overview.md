@@ -47,6 +47,8 @@ A ULID (Universally Unique Lexicographically Sortable Identifier) is a 26-charac
 
 A Wiki-link is an inline reference to another Object using `[[type/slug]]` syntax in the Markdown body. TypeMD tracks these links and their backlinks, so you can discover connections between Objects.
 
+[Learn more about Wiki-links →](/concepts/wiki-links)
+
 ## Index
 
 The Index is a SQLite database (`.typemd/index.db`) that caches Object metadata for fast querying and searching. It is automatically built and updated — you never need to edit it by hand.

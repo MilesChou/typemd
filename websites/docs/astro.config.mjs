@@ -38,30 +38,14 @@ export default defineConfig({
 						{ label: 'Objects', slug: 'concepts/objects' },
 						{ label: 'Types', slug: 'concepts/types' },
 						{ label: 'Relations', slug: 'concepts/relations' },
-					],
-				},
-				{
-					label: 'Guides',
-					translations: { 'zh-TW': '指南' },
-					items: [
-						{ label: 'Objects & Types', slug: 'guides/objects-and-types' },
-						{ label: 'Relations', slug: 'guides/relations' },
-						{ label: 'Type Schemas', slug: 'guides/type-schemas' },
-						{ label: 'Querying', slug: 'guides/querying' },
-						{ label: 'Translating', slug: 'guides/translating' },
+						{ label: 'Wiki-links', slug: 'concepts/wiki-links' },
+						{ label: 'Data Model', slug: 'concepts/data-model' },
 					],
 				},
 				{
 					label: 'CLI Reference',
 					translations: { 'zh-TW': 'CLI 參考' },
 					autogenerate: { directory: 'reference' },
-				},
-				{
-					label: 'Architecture',
-					translations: { 'zh-TW': '架構' },
-					items: [
-						{ label: 'Data Model', slug: 'architecture/data-model' },
-					],
 				},
 			],
 		}),

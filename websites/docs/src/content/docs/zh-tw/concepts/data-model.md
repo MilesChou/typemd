@@ -2,7 +2,7 @@
 title: 資料模型
 description: TypeMD 如何儲存和索引資料。
 sidebar:
-  order: 1
+  order: 6
 ---
 
 ## 儲存
@@ -33,28 +33,29 @@ TypeMD 使用 SQLite 搭配 FTS5 進行索引。索引儲存在 `.typemd/index.d
 
 開啟 vault 時，若資料庫為空或缺失（例如 clone 後首次開啟），索引會自動同步。使用 TUI 或 CLI 指令時也會保持更新。在 TypeMD 外部手動編輯檔案後，使用 `tmd reindex` 重建。
 
-## 架構
+## 查詢
 
-TypeMD 是一個 monorepo，共用 Go 核心程式庫並提供多種介面：
+TypeMD 提供兩種尋找 Object 的方式：結構化查詢和全文搜尋。
 
-```
-typemd/
-├── core/       # 核心程式庫——Object、Type、Relation、索引
-├── cmd/        # CLI 指令（Cobra）
-├── tui/        # 終端 UI（Bubble Tea）
-├── mcp/        # MCP server，用於 AI 整合
-├── web/        # Web UI API（規劃中）
-├── app/        # 桌面應用程式（規劃中）
-├── site/       # 官方網站（Astro）→ typemd.io
-└── docs/       # 文件（Starlight）→ docs.typemd.io
+### 結構化查詢
+
+使用 `tmd query` 依屬性篩選 Object。條件使用 `key=value` 格式，以空格分隔（AND 邏輯）。
+
+```bash
+tmd query "type=book"
+tmd query "type=book status=reading"
+tmd query "type=book" --json
 ```
 
-所有介面共用相同的 `core` 程式庫。
+### 全文搜尋
 
-## 技術堆疊
+使用 `tmd search` 搜尋檔名、屬性和內文。由 SQLite FTS5 驅動。
 
-- **語言**：Go
-- **TUI**：[Bubble Tea](https://github.com/charmbracelet/bubbletea) + [Lip Gloss](https://github.com/charmbracelet/lipgloss)
-- **MCP**：[mcp-go](https://github.com/mark3labs/mcp-go) — Model Context Protocol server
-- **索引**：SQLite 搭配 FTS5 全文搜尋
-- **儲存**：Markdown + YAML frontmatter
+```bash
+tmd search "concurrency"
+tmd search "golang" --json
+```
+
+### TUI 搜尋
+
+在 TUI 中，按 `/` 進入搜尋模式。結果會即時篩選。按 `Esc` 清除結果並回到完整列表。

@@ -45,15 +45,33 @@ A **bidirectional** Relation keeps both sides in sync. When you link a book's `a
 
 This is controlled by the `multiple` field in the schema.
 
+## Relation fields
+
+| Field | Description |
+|-------|-------------|
+| `target` | Target object's type name |
+| `multiple` | Whether the property holds multiple values (array). Single-value relations are overwritten on re-link; multi-value relations append. |
+| `bidirectional` | Auto-sync the inverse side when linking |
+| `inverse` | Property name on the target type's schema |
+
+## Using Relations
+
+### Create a link
+
+```bash
+tmd link book/golang-in-action author person/alan-donovan
+```
+
+When `bidirectional: true`, this automatically updates both the book's `author` and the person's `books` property.
+
+### Remove a link
+
+```bash
+tmd unlink book/golang-in-action author person/alan-donovan --both
+```
+
+Use `--both` to remove the inverse side as well. This only takes effect when the relation property has `bidirectional: true` and an `inverse` field defined in the schema.
+
 ## Relations vs. wiki-links
 
-TypeMD supports both Relations and wiki-links (`[[type/slug]]`). They serve different purposes:
-
-| | Relation | Wiki-link |
-|---|----------|-----------|
-| Defined in | Type schema (frontmatter) | Markdown body |
-| Structured | Yes — named, typed, queryable | No — freeform inline reference |
-| Bidirectional | Configurable per schema | Backlinks tracked automatically |
-| Use case | Formal connections (author, project members) | Informal references (see also, mentioned in) |
-
-Use Relations for connections that are part of your data model. Use wiki-links for casual references in your notes.
+TypeMD also supports [wiki-links](/concepts/wiki-links) (`[[type/slug]]`) for informal inline references. Relations are structured and schema-defined; wiki-links are freeform and live in the Markdown body. See the [Wiki-links](/concepts/wiki-links) page for a detailed comparison.

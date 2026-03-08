@@ -47,6 +47,8 @@ ULID（Universally Unique Lexicographically Sortable Identifier）是透過 CLI 
 
 Wiki-link 是在 Markdown 內文中使用 `[[type/slug]]` 語法來引用其他 Object 的方式。TypeMD 會追蹤這些連結及其反向連結（backlink），讓你發現 Object 之間的關聯。
 
+[深入了解 Wiki-link →](/zh-tw/concepts/wiki-links)
+
 ## Index
 
 Index（索引）是一個 SQLite 資料庫（`.typemd/index.db`），快取 Object 的中繼資料以供快速查詢和搜尋。它會自動建立和更新，你不需要手動編輯。

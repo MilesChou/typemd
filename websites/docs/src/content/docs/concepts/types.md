@@ -63,3 +63,16 @@ Each property in a Type schema has a data type:
 | `number` | Integer or float | `42`, `3.14` |
 | `enum` | One of a fixed set of values | `"reading"` |
 | `relation` | A link to another Object | `"person/alan-donovan"` |
+
+For relation properties, see the [Relations](/concepts/relations) page for details on `target`, `bidirectional`, `inverse`, and `multiple` fields.
+
+## Validation
+
+TypeMD uses lenient validation:
+
+- Only validates properties defined in the schema
+- Extra properties (not in schema) are allowed
+- Missing properties do not cause errors
+- `enum` values must be in the `values` list
+- `number` must be numeric
+- `relation` targets are checked for correct type

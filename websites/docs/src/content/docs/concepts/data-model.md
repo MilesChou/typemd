@@ -2,7 +2,7 @@
 title: Data Model
 description: How TypeMD stores and indexes data.
 sidebar:
-  order: 1
+  order: 6
 ---
 
 ## Storage
@@ -35,28 +35,29 @@ TypeMD uses SQLite with FTS5 for indexing. The index is stored at `.typemd/index
 
 The index is automatically synced when opening a vault with an empty or missing database (e.g. after a fresh clone). It is also kept up-to-date when using the TUI or CLI commands. Use `tmd reindex` to rebuild after manual file edits outside of TypeMD.
 
-## Architecture
+## Querying
 
-TypeMD is a monorepo with a shared Go core and multiple interfaces:
+TypeMD provides two ways to find Objects: structured queries and full-text search.
 
-```
-typemd/
-├── core/       # Core library — objects, types, relations, index
-├── cmd/        # CLI commands (Cobra)
-├── tui/        # Terminal UI (Bubble Tea)
-├── mcp/        # MCP server for AI integration
-├── web/        # Web UI API (planned)
-├── app/        # Desktop app (planned)
-├── site/       # Official website (Astro) → typemd.io
-└── docs/       # Documentation (Starlight) → docs.typemd.io
+### Structured queries
+
+Use `tmd query` to filter Objects by properties. Conditions use `key=value` format, separated by spaces (AND logic).
+
+```bash
+tmd query "type=book"
+tmd query "type=book status=reading"
+tmd query "type=book" --json
 ```
 
-All interfaces share the same `core` library.
+### Full-text search
 
-## Tech Stack
+Use `tmd search` to search across filenames, properties, and body content. Powered by SQLite FTS5.
 
-- **Language**: Go
-- **TUI**: [Bubble Tea](https://github.com/charmbracelet/bubbletea) + [Lip Gloss](https://github.com/charmbracelet/lipgloss)
-- **MCP**: [mcp-go](https://github.com/mark3labs/mcp-go) — Model Context Protocol server
-- **Index**: SQLite with FTS5 full-text search
-- **Storage**: Markdown + YAML frontmatter
+```bash
+tmd search "concurrency"
+tmd search "golang" --json
+```
+
+### TUI search
+
+In the TUI, press `/` to enter search mode. Results are filtered in real-time. Press `Esc` to clear results and return to the full list.
