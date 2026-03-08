@@ -31,6 +31,16 @@ export default defineConfig({
 					],
 				},
 				{
+					label: 'Concepts',
+					translations: { 'zh-TW': '設計概念' },
+					items: [
+						{ label: 'Overview', slug: 'concepts/overview' },
+						{ label: 'Objects', slug: 'concepts/objects' },
+						{ label: 'Types', slug: 'concepts/types' },
+						{ label: 'Relations', slug: 'concepts/relations' },
+					],
+				},
+				{
 					label: 'Guides',
 					translations: { 'zh-TW': '指南' },
 					items: [
