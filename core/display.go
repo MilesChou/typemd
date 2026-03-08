@@ -1,6 +1,9 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // BacklinksDisplayKey is the property key used for wiki-link backlinks.
 const BacklinksDisplayKey = "backlinks"
@@ -15,19 +18,28 @@ type DisplayProperty struct {
 	FromID     string // populated for reverse relations and backlinks
 }
 
+// displayObjectID strips the ULID suffix from an object ID for human-readable display.
+// "person/robert-martin-01kk39c30y47xb1dvbs8ywqv50" → "person/robert-martin"
+func displayObjectID(id string) string {
+	if i := strings.IndexByte(id, '/'); i >= 0 {
+		return id[:i+1] + StripULID(id[i+1:])
+	}
+	return StripULID(id)
+}
+
 // Format returns a human-readable string for this property.
 func (p DisplayProperty) Format() string {
 	if p.IsBacklink {
-		return fmt.Sprintf("%s: ⟵ %s", p.Key, p.FromID)
+		return fmt.Sprintf("%s: ⟵ %s", p.Key, displayObjectID(p.FromID))
 	}
 	if p.IsReverse {
-		return fmt.Sprintf("%s: ← %s", p.Key, p.FromID)
+		return fmt.Sprintf("%s: ← %s", p.Key, displayObjectID(p.FromID))
 	}
 	if p.Value == nil {
 		return fmt.Sprintf("%s: (null)", p.Key)
 	}
 	if p.IsRelation {
-		return fmt.Sprintf("%s: → %v", p.Key, p.Value)
+		return fmt.Sprintf("%s: → %s", p.Key, displayObjectID(fmt.Sprintf("%v", p.Value)))
 	}
 	return fmt.Sprintf("%s: %v", p.Key, p.Value)
 }

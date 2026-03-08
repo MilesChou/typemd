@@ -200,3 +200,44 @@ func TestBacklinkFormat(t *testing.T) {
 		t.Errorf("Format() = %q, want %q", got, expected)
 	}
 }
+
+func TestFormat_RelationDisplayID(t *testing.T) {
+	p := DisplayProperty{
+		Key:        "author",
+		Value:      "person/robert-martin-01kk39c30y47xb1dvbs8ywqv50",
+		IsRelation: true,
+	}
+	got := p.Format()
+	expected := "author: → person/robert-martin"
+	if got != expected {
+		t.Errorf("Format() = %q, want %q", got, expected)
+	}
+}
+
+func TestFormat_ReverseRelationDisplayID(t *testing.T) {
+	p := DisplayProperty{
+		Key:       "books",
+		Value:     "book/clean-code-01kk39c30y47xb1dvbs8ywqv50",
+		IsReverse: true,
+		FromID:    "book/clean-code-01kk39c30y47xb1dvbs8ywqv50",
+	}
+	got := p.Format()
+	expected := "books: ← book/clean-code"
+	if got != expected {
+		t.Errorf("Format() = %q, want %q", got, expected)
+	}
+}
+
+func TestFormat_BacklinkDisplayID(t *testing.T) {
+	p := DisplayProperty{
+		Key:        BacklinksDisplayKey,
+		Value:      "note/my-note-01kk39c30y47xb1dvbs8ywqv50",
+		IsBacklink: true,
+		FromID:     "note/my-note-01kk39c30y47xb1dvbs8ywqv50",
+	}
+	got := p.Format()
+	expected := "backlinks: ⟵ note/my-note"
+	if got != expected {
+		t.Errorf("Format() = %q, want %q", got, expected)
+	}
+}
