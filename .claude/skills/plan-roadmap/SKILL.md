@@ -5,7 +5,7 @@ description: Use when the user asks to "plan a roadmap", "review milestone scope
 
 # Plan Roadmap
 
-Review a milestone's scope, analyze issue relationships, and rebalance to fit a one-week release cadence.
+Review all milestones' scope, analyze issue relationships, and rebalance to fit a one-week release cadence.
 
 ## Language
 
@@ -14,6 +14,7 @@ All issue comments and milestone descriptions MUST be written in **English**.
 ## Principles
 
 - One minor version = one week of work
+- Every release must deliver visible user value — avoid pure tech-debt or pure testing milestones
 - Epics and their children should stay in the same milestone (or move together)
 - Blocked issues cannot ship before their blockers
 - Discussion-tagged issues need design first — don't schedule for immediate delivery
@@ -22,22 +23,22 @@ All issue comments and milestone descriptions MUST be written in **English**.
 
 ### Step 1: Gather
 
-Fetch all context for the target milestone:
+Fetch all milestones and their issues at once:
 
 ```bash
-# Milestone info
-gh api repos/typemd/typemd/milestones --jq '.[] | select(.title=="v<VERSION>") | {title, number, open_issues, closed_issues}'
+# All milestones
+gh api repos/typemd/typemd/milestones --jq '.[] | {title, number, open_issues, closed_issues}'
 
-# All milestones for context
-gh api repos/typemd/typemd/milestones --jq '.[] | {title, open_issues, closed_issues}'
-
-# Open issues in target milestone
+# Open issues for each milestone (run in parallel)
 gh issue list --milestone "v<VERSION>" --state open --json number,title,labels,body --limit 50
+# Repeat for every milestone
 ```
+
+Run the `gh issue list` commands for all milestones in parallel to minimize latency.
 
 ### Step 2: Analyze relationships
 
-For each issue in the milestone, query parent, sub-issues, and blocking relationships:
+For each issue across all milestones, query parent, sub-issues, and blocking relationships:
 
 ```bash
 gh api graphql -f query='query {
@@ -82,30 +83,54 @@ Categorize each issue by effort:
 
 ### Step 4: Propose rebalancing
 
-Present a report with:
+Present a report covering all milestones:
 
-**Current state:**
+**Overview:**
+
+| Milestone | Issues | Est. Effort | Budget | Status |
+|-----------|--------|-------------|--------|--------|
+| v0.X.0 | N open | X days | 3.5–4 days | over/under/ok |
+
+**Per-milestone detail:**
+
+For each milestone, list:
 
 | # | Title | Size | Labels | Dependencies |
 |---|-------|------|--------|-------------|
 | ... | ... | S/M/L | ... | blocks #N, blocked by #N, child of #N |
 
-**Total estimated effort:** X days (over/under budget)
-
 **Proposed changes:**
 
-1. **Keep in v<VERSION>** — issues that fit the budget
-2. **Move to v<NEXT>** — issues that exceed budget, with reason
+1. **Keep** — issues that fit their milestone's budget
+2. **Move** — issues to move between milestones, with reason
 3. **Close** — issues already done or obsolete
-4. **Flag** — cross-milestone dependency problems
+4. **Flag** — cross-milestone dependency problems (e.g. blocker in a later milestone than the issue it blocks)
+
+**Release value check:**
+
+After effort-based rebalancing, review each milestone's release value. Every release should have a clear theme and at least one user-visible feature. Flag milestones that contain only:
+
+- Tech debt (dependency upgrades, refactoring)
+- Testing (BDD, unit tests)
+- Internal tooling with no user-facing change
+
+When a milestone lacks user value, mix in a feature issue from an adjacent milestone. Prefer pairing related items (e.g. a dependency upgrade + a feature that benefits from it) over arbitrary mixing.
+
+Present a value summary table:
+
+| Milestone | Theme | User-Visible Value |
+|-----------|-------|--------------------|
+| v0.X.0 | ... | what users get in this release |
 
 **Rebalancing rules:**
 
+- Every milestone must ship at least one user-visible improvement
 - Prefer keeping small, independent issues (quick wins)
 - Move large epics with all their children together
 - Keep blockers in earlier milestones than the issues they block
 - `discussion` issues go to later milestones unless design is already done
 - Don't split an epic across milestones (parent and children stay together)
+- When mixing in features to add value, prefer natural pairings (e.g. upgrade + enhancement that depends on it)
 
 ### Step 5: Confirm and execute
 
@@ -114,10 +139,10 @@ Use AskUserQuestion to confirm the plan. Options:
 - **"Looks good, execute"** — proceed
 - **"I want to adjust"** — iterate
 
-Once confirmed, execute all changes:
+Once confirmed, execute all changes across milestones:
 
 ```bash
-# Move issues to different milestone
+# Move issues between milestones
 gh issue edit <number> --milestone "v<TARGET>"
 
 # Close obsolete issues
