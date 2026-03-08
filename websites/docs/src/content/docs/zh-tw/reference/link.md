@@ -10,3 +10,5 @@ sidebar:
 ```bash
 tmd link book/golang-in-action author person/alan-donovan
 ```
+
+對於單值 relation（未設定 `multiple: true`），重新連結會覆蓋先前的值。對於多值 relation，新目標會附加到清單中。

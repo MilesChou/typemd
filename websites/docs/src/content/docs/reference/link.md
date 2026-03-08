@@ -10,3 +10,5 @@ Creates a relation between two objects. If the schema defines `bidirectional: tr
 ```bash
 tmd link book/golang-in-action author person/alan-donovan
 ```
+
+For single-value relations (without `multiple: true`), linking overwrites the previous value. For multi-value relations, the new target is appended to the list.

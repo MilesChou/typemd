@@ -14,4 +14,4 @@ tmd create person robert-martin
 
 指令會在 `objects/<type>/` 下產生 `.md` 檔案，所有 schema 定義的屬性設為預設值（若無預設值則為 `null`）。Object 同時會被加入 SQLite 索引。
 
-如果 Type 不存在或同名的 Object 已存在，會回傳錯誤。
+每個 Object 會被分配唯一的 ULID 後綴，因此同一 Type 下可以有相同名稱的物件（例如兩個 `book/clean-code-<ulid>` 但 ULID 不同）。如果 Type 不存在，會回傳錯誤。

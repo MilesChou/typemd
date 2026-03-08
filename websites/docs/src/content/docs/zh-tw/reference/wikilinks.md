@@ -26,7 +26,8 @@ Wiki-links 讓你在 Markdown 內文中用 `[[target]]` 語法參照其他 Objec
 1. 當索引同步時（`tmd reindex` 或自動同步），indexer 會從每個 Object 的內文解析 `[[...]]` 模式
 2. 目標會與資料庫中的現有 Object 進行比對
 3. Wiki-link 記錄儲存在 SQLite 索引中，以便快速查詢反向連結
-4. 無法解析的目標會儲存為壞連結（可透過 `tmd validate` 偵測）
+4. 重新同步時，已從內文中移除的 wiki-links 會自動清理——對應的反向連結也會一併移除
+5. 無法解析的目標會儲存為壞連結（可透過 `tmd validate` 偵測）
 
 ## 反向連結
 

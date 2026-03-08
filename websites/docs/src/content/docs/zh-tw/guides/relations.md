@@ -41,7 +41,7 @@ properties:
 | 欄位 | 說明 |
 |------|------|
 | `target` | 目標 Object 的 Type 名稱 |
-| `multiple` | 該屬性是否儲存多個值（陣列） |
+| `multiple` | 該屬性是否儲存多個值（陣列）。單值 relation 重新連結時會覆蓋；多值 relation 會附加。 |
 | `bidirectional` | 連結時自動同步反向端 |
 | `inverse` | 目標 Type schema 上的屬性名稱 |
 

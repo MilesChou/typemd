@@ -26,7 +26,8 @@ The target must be a full Object ID (including the ULID suffix).
 1. When the index is synced (`tmd reindex` or auto-sync), the indexer parses `[[...]]` patterns from each object's body
 2. Targets are resolved against existing objects in the database
 3. Wiki-link records are stored in the SQLite index for fast backlink lookups
-4. Unresolvable targets are stored as broken links (detectable via `tmd validate`)
+4. On re-sync, wiki-links that have been removed from the markdown body are automatically cleaned up — their backlinks are also removed
+5. Unresolvable targets are stored as broken links (detectable via `tmd validate`)
 
 ## Backlinks
 

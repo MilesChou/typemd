@@ -14,4 +14,4 @@ tmd create person robert-martin
 
 The command generates a `.md` file under `objects/<type>/` with all schema-defined properties set to their default values (or `null` if no default is specified). The object is also added to the SQLite index.
 
-If the type does not exist or an object with the same name already exists, an error is returned.
+Each object is assigned a unique ULID suffix, so multiple objects of the same type can share the same name (e.g. two `book/clean-code-<ulid>` files with different ULIDs). If the type does not exist, an error is returned.

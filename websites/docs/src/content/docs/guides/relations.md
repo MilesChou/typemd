@@ -41,7 +41,7 @@ properties:
 | Field | Description |
 |-------|-------------|
 | `target` | Target object's type name |
-| `multiple` | Whether the property holds multiple values (array) |
+| `multiple` | Whether the property holds multiple values (array). Single-value relations are overwritten on re-link; multi-value relations append. |
 | `bidirectional` | Auto-sync the inverse side when linking |
 | `inverse` | Property name on the target type's schema |
 
