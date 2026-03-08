@@ -278,17 +278,51 @@ import Layout from "../layouts/Layout.astro";
 
   /* Responsive */
   @media (max-width: 640px) {
+    .hero {
+      padding: 3rem 1.25rem 2.5rem;
+    }
+
     .hero h1 {
       font-size: 2.25rem;
+    }
+
+    .tagline {
+      font-size: 1.1rem;
+    }
+
+    .install-block {
+      display: block;
+      padding: 0.75rem 1rem;
+      overflow-x: auto;
+    }
+
+    .install-block code {
+      font-size: 0.85rem;
+    }
+
+    .hero-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .features {
+      padding: 2.5rem 1.25rem;
     }
 
     .feature-grid {
       grid-template-columns: 1fr;
     }
 
-    .hero-actions {
-      flex-direction: column;
-      align-items: center;
+    .quickstart {
+      padding: 2.5rem 1.25rem;
+    }
+
+    .step-content pre {
+      overflow-x: auto;
+    }
+
+    .step-content code {
+      font-size: 0.8rem;
     }
   }
 </style>
