@@ -233,6 +233,12 @@ typemd/
 - **索引**：SQLite 搭配 FTS5 全文搜尋
 - **儲存**：Markdown + YAML frontmatter
 
+## 相關資源
+
+- [變更日誌](CHANGELOG.zh-TW.md)
+- [貢獻指南](CONTRIBUTING.md)
+- [部落格](https://blog.typemd.io)
+
 ## 靈感來源
 
 - [Anytype](https://anytype.io) — 加密的本地優先雲端應用替代方案

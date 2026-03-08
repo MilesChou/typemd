@@ -233,6 +233,12 @@ All interfaces share the same `core` library.
 - **Index**: SQLite with FTS5 full-text search
 - **Storage**: Markdown + YAML frontmatter
 
+## Resources
+
+- [CHANGELOG](CHANGELOG.md)
+- [CONTRIBUTING](CONTRIBUTING.md)
+- [Blog](https://blog.typemd.io)
+
 ## Inspiration
 
 - [Anytype](https://anytype.io) — encrypted, local-first alternative to cloud apps
