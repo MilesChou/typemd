@@ -5,6 +5,8 @@ builds:
     binary: tmd
     env:
       - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X github.com/typemd/typemd/cmd.Version={{.Version}}
     goos:
       - darwin
       - linux
