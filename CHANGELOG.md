@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 - Migration — `tmd migrate` updates existing objects when schemas evolve (#22)
 - Auto-reindex — SQLite index is automatically rebuilt when empty or missing (#41)
 - Orphan cleanup — stale relations detected and removed during reindex (#21)
+- CLI reorganization — commands grouped by resource type: `tmd object`, `tmd type`, `tmd relation` (#141)
 - TUI — three-panel layout (#47), in-place body editing (#85), edit mode with visual indicator (#84), auto-save on exit (#86), help popup (#104)
 - TUI display — ULID stripped from display names (#75), reduced indentation (#57), grouped object list (#43)
 - MCP Server — `tmd mcp` exposes vault to AI assistants
