@@ -172,11 +172,11 @@ git checkout -b <branch-name>
 
 Execute the implementation plan from Phase 1. Choose the appropriate approach:
 
-- **TDD** (`superpowers:test-driven-development`) — when the task has clear inputs/outputs or is fixing a bug with a reproducible case
+- **BDD** — the default for `core/` and `tui/` changes. BDD scenarios define behaviors and shared vocabulary (what a feature does), not implementation details. Write Gherkin `.feature` files first (in `<package>/features/`), then implement step definitions and production code. Use unit tests for precise validation (edge cases, output formats, exact values). For `cmd/` changes, BDD tests are usually unnecessary since CLI commands delegate to `core/`. For `mcp/`, use unit tests until BDD scope is decided.
 - **Subagent-driven** (`superpowers:subagent-driven-development`) — when the plan has 3+ sequential steps that each produce testable output
 - **Parallel agents** (`superpowers:dispatching-parallel-agents`) — when the plan has 2+ independent tasks with no shared state (e.g., separate packages, separate files)
 
-If unsure, default to sequential implementation without invoking a sub-skill.
+If unsure, default to BDD with sequential implementation.
 
 At key decision points, check with the user before proceeding.
 

@@ -34,8 +34,19 @@ go run ./cmd/tmd [command]
 
 ## Testing
 
-- Tests live in the same package as implementation
-- Use `t.TempDir()` for isolation
-- Cover happy path and error/edge cases
-- BDD tests use Godog (Cucumber for Go) with Gherkin `.feature` files in `core/features/`
-- Business-logic scenarios use BDD style; pure unit tests remain traditional
+This project uses two layers of testing:
+
+- **BDD (Godog)** — Define behaviors, establish shared vocabulary, and describe what a feature does from the user's perspective. Gherkin `.feature` files live in `<package>/features/`. BDD scenarios focus on **what**, not implementation details.
+- **Unit tests** — Verify precise logic: edge cases, output formats, exact values, error conditions. Traditional Go `testing` style.
+
+When deciding where a test belongs: if it defines a behavior or names a concept, write a BDD scenario. If it validates an implementation detail (e.g. JSON format, lowercase ULID, flag edge cases), write a unit test.
+
+### BDD scope by package
+
+| Package | Testing approach |
+|---------|-----------------|
+| `core/` | BDD (`core/features/`) + unit tests |
+| `tui/`  | BDD (`tui/features/`, planned) + unit tests |
+| `web/`  | BDD (`web/features/`, future) |
+| `cmd/`  | Minimal — CLI commands delegate to `core/`, covered by core BDD scenarios |
+| `mcp/`  | Unit tests — BDD TBD |
