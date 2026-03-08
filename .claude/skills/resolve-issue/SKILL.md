@@ -5,64 +5,45 @@ allowed-tools:
   - Bash(gh api repos/typemd/typemd/milestones:*)
   - Bash(gh issue list:*)
   - Bash(gh issue view:*)
+  - Bash(openspec:*)
 ---
 
 # Resolve Issue
 
 Orchestrate the full lifecycle of resolving a GitHub issue — from reading the issue to opening a PR — with user confirmation at each phase.
 
-All progress is tracked via **issue comments**, enabling resume from any interruption point.
-
-## Language
-
-All issue comments MUST be written in **English**.
+All progress is tracked via **OpenSpec changes**, enabling resume from any interruption point.
 
 ## Resume Detection
 
-Before starting, check if work has already begun:
+Before starting, check if an OpenSpec change already exists for this issue:
 
 ```bash
-gh issue view <number> --json comments --jq '.comments[].body'
+openspec list --json
 ```
 
-Look for comments matching the pattern `## 🔄 Phase N:`. Find the latest one and check its status:
+Look for a change name matching the issue (e.g., `issue-<N>-<slug>`). If found, check its status:
 
-- `✅ Completed` → resume from the **next** phase
-- `⏸️ Paused` or `❌ Blocked` → resume from **that** phase
+```bash
+openspec status --change "<name>" --json
+```
+
+Based on artifact completion:
+
+- **No artifacts done** → resume from Phase 1 (Design)
+- **proposal/design/specs done, tasks done** → resume from Phase 2 (Implement), check task progress in `tasks.md`
+- **All tasks complete** → resume from Phase 3 (Verify and Ship)
 
 If prior progress is detected, present a summary and ask the user via AskUserQuestion:
 
-- **"Continue from Phase N"** — resume from the detected point
-- **"Start over"** — discard previous progress and begin from Preflight
+- **"Continue from where we left off"** — resume from the detected point
+- **"Start over"** — delete the existing change and begin from Preflight
 
-If no progress comments exist, start from Preflight.
-
-## Comment Format
-
-All phases (Phase 1–3) write comments to the issue. Preflight is a lightweight step that does not require issue comments.
-
-Use this format:
-
-```markdown
-## 🔄 Phase N: <Phase Name>
-
-**Status:** ✅ Completed
-
-<phase-specific content>
-
----
-_Updated by Claude Code at YYYY-MM-DD HH:MM (UTC)_
-```
-
-If pausing mid-phase, write the comment with `⏸️ Paused` and include what was completed so far.
-
-```bash
-gh issue comment <number> --body "<comment>"
-```
+If no matching change exists, start from Preflight.
 
 ## Preflight
 
-Preflight covers all lightweight preparation steps before the main phases begin. No issue comments are written during this stage.
+Preflight covers all lightweight preparation steps before the main phases begin.
 
 ### Issue Selection (when no issue number is specified)
 
@@ -135,16 +116,17 @@ Ask the user via AskUserQuestion:
 
 ### Phase 1: Design
 
-Explore the design space collaboratively with the user:
+Use the `openspec-propose` skill to create an OpenSpec change for this issue.
 
-1. Explore project context (files, docs, recent commits)
-2. Ask clarifying questions one at a time
-3. Propose 2-3 approaches with trade-offs and a recommendation
-4. Present design for user approval
+**Change naming convention:** `issue-<N>-<slug>` where `<slug>` is a short kebab-case summary derived from the issue title (max 5 words). Example: `issue-10-wiki-links-backlinks`.
 
-**IMPORTANT:** Do NOT save design documents to `docs/plans/`. All design output is written directly to the issue comment. This keeps the design co-located with the issue for traceability and resume support.
+The propose skill will create:
+- `proposal.md` — what and why (derived from the issue description)
+- `design.md` — how (architecture decisions, approach)
+- `specs/<capability>/spec.md` — behavioral requirements with scenarios
+- `tasks.md` — implementation steps
 
-**Comment content:** The complete design — architecture decisions, approach chosen, implementation plan with steps.
+Present the generated artifacts to the user for review before proceeding.
 
 ### Phase 2: Implement
 
@@ -170,7 +152,9 @@ git checkout -b <branch-name>
 
 #### Implementation
 
-Execute the implementation plan from Phase 1. Choose the appropriate approach:
+Use the `openspec-apply-change` skill to execute the tasks from the OpenSpec change. The apply skill reads `tasks.md` and implements each task in order.
+
+Choose the appropriate implementation approach:
 
 - **BDD** — the default for `core/` and `tui/` changes. BDD scenarios define behaviors and shared vocabulary (what a feature does), not implementation details. Write Gherkin `.feature` files first (in `<package>/features/`), then implement step definitions and production code. Use unit tests for precise validation (edge cases, output formats, exact values). For `cmd/` changes, BDD tests are usually unnecessary since CLI commands delegate to `core/`. For `mcp/`, use unit tests until BDD scope is decided.
 - **Subagent-driven** (`superpowers:subagent-driven-development`) — when the plan has 3+ sequential steps that each produce testable output
@@ -180,19 +164,9 @@ If unsure, default to BDD with sequential implementation.
 
 At key decision points, check with the user before proceeding.
 
-When pausing mid-implementation, write a comment listing:
-
-- Files created or modified so far
-- Steps completed from the plan
-- Remaining steps
-
-Once implementation is complete, write a comment summarizing:
-
-**Comment content:** Summary of what was implemented, files changed, any deviations from the plan.
-
 ### Phase 3: Verify and Ship
 
-Execute the following steps in order, then write a single comment summarizing the outcome.
+Execute the following steps in order:
 
 1. **Verify** — invoke `superpowers:verification-before-completion` to confirm all tests pass, no regressions, and implementation matches the plan.
 
@@ -200,7 +174,9 @@ Execute the following steps in order, then write a single comment summarizing th
 
 3. **Commit and Push** — invoke `git:commit-push` skill.
 
-4. **Open PR** — create a pull request using the project's PR template at `.github/pull_request_template.md` as the body structure:
+4. **Archive** — use the `openspec-archive-change` skill to archive the completed change. This syncs any delta specs to the main `openspec/specs/` directory and moves the change to `openspec/changes/archive/`.
+
+5. **Open PR** — create a pull request using the project's PR template at `.github/pull_request_template.md` as the body structure:
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'
@@ -221,10 +197,6 @@ Closes #<N>
 EOF
 )"
 ```
-
-**Comment content:** Test results summary, PR URL, final status.
-
-Mark the comment status as `✅ Completed`.
 
 ### Done
 
