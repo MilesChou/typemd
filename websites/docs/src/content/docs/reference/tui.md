@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-Launches the TUI interactive interface — a three-panel layout for browsing objects (list, body, and properties).
+Launches the TUI interactive interface for browsing objects.
 
 ```bash
 tmd
@@ -13,7 +13,18 @@ tmd --vault /path/to/vault
 tmd --readonly
 ```
 
-The properties panel is hidden by default and can be toggled with `p`. On narrow terminals (< 56 columns), it auto-hides. The panel displays schema properties, relations, and wiki-link backlinks.
+## Layout
+
+The TUI uses a multi-panel layout:
+
+| Panel | Description |
+|-------|-------------|
+| **Object list** (left) | Groups objects by type. Each group header shows type emoji (if defined), type name, and object count (e.g. `▼ 📚 book (3)`). |
+| **Title** (top-right) | Shows the selected object's type emoji, type name, and display name (e.g. `📖 book · Clean Code`). Hidden when no object is selected. |
+| **Body** (middle-right) | Displays the object's markdown body content. |
+| **Properties** (right) | Shows schema properties, relations, and wiki-link backlinks. Hidden by default; toggle with `p`. Auto-hides on narrow terminals (< 56 columns). |
+
+The title panel spans the full width of the right side (body + properties area).
 
 ## Keyboard Shortcuts
 

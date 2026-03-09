@@ -5,7 +5,7 @@ sidebar:
   order: 1
 ---
 
-啟動 TUI 互動式介面——三欄版面配置，用於瀏覽 Object（列表、內文和屬性）。
+啟動 TUI 互動式介面，用於瀏覽 Object。
 
 ```bash
 tmd
@@ -13,7 +13,18 @@ tmd --vault /path/to/vault
 tmd --readonly
 ```
 
-屬性面板預設為隱藏，可用 `p` 切換。在窄終端（< 56 欄）上會自動隱藏。面板會顯示 schema 屬性、Relation 和 wiki-link 反向連結。
+## 版面配置
+
+TUI 使用多面板版面配置：
+
+| 面板 | 說明 |
+|------|------|
+| **Object 列表**（左側） | 依 type 分群顯示 object。群組標題會顯示 type emoji（若有定義）、type 名稱和 object 數量（如 `▼ 📚 book (3)`）。 |
+| **標題**（右上方） | 顯示所選 object 的 type emoji、type 名稱和顯示名稱（如 `📖 book · Clean Code`）。未選取 object 時隱藏。 |
+| **內文**（右中） | 顯示 object 的 markdown 內文內容。 |
+| **屬性**（右側） | 顯示 schema 屬性、Relation 和 wiki-link 反向連結。預設隱藏，可用 `p` 切換。在窄終端（< 56 欄）上會自動隱藏。 |
+
+標題面板橫跨整個右側寬度（內文 + 屬性區域）。
 
 ## 鍵盤快捷鍵
 

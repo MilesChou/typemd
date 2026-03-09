@@ -20,7 +20,7 @@ tmd
 tmd --readonly  # read-only mode (no editing)
 ```
 
-This launches the three-panel interface for browsing your vault.
+This launches the interactive TUI for browsing your vault — objects are grouped by type in a list on the left, with a title, body, and properties panel on the right.
 
 ## 3. Create Your First Object
 

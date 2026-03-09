@@ -20,7 +20,7 @@ tmd
 tmd --readonly  # 唯讀模式（停用編輯功能）
 ```
 
-這會啟動三欄介面來瀏覽你的 vault。
+這會啟動互動式 TUI 來瀏覽你的 vault——左側依 type 分群顯示 object 列表，右側則有標題、內文和屬性面板。
 
 ## 3. 建立你的第一個 Object
 

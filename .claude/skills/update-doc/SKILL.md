@@ -35,7 +35,7 @@ digraph update_doc {
 }
 ```
 
-### 1. Scan — Identify all doc sources
+### 1. Scan — Identify all doc sources and spec sources
 
 Collect every place that documents behavior:
 
@@ -44,6 +44,10 @@ Collect every place that documents behavior:
 - `docs/` site content (Starlight, Docusaurus, etc.)
 - Inline help strings in CLI code (Cobra `Short`/`Long`/`Use` fields)
 - Man pages, changelog, or other generated docs
+
+Also collect formal specifications as a source of truth:
+
+- `openspec/specs/*/spec.md` — Each spec defines requirements with scenarios that describe expected behavior. These are the canonical reference for what a feature should do and how it should work.
 
 ### 2. Explore — Compare docs against code
 
@@ -57,6 +61,8 @@ Use an Explore agent for thorough comparison. Check these areas:
 | **API / MCP tools** | Tool names, parameters, return fields match |
 | **Architecture** | Directory listing matches actual directories; planned vs existing |
 | **Config / init** | Documented behavior matches edge cases (already-init, errors) |
+| **Specs → Docs** | Every requirement in `openspec/specs/*/spec.md` has corresponding documentation; scenario descriptions match doc descriptions |
+| **Specs → Code** | Every requirement in specs is actually implemented; code behavior matches scenario expectations |
 
 **Key patterns to catch:**
 
@@ -65,6 +71,9 @@ Use an Explore agent for thorough comparison. Check these areas:
 - Doc lists partial fields when code returns more
 - Flags or options exist in code but missing from docs
 - Behavioral nuance undocumented (e.g. `--both` only works with `bidirectional: true`)
+- Spec requirement exists but has no corresponding documentation page or section
+- Spec scenario describes behavior that contradicts what docs say
+- Spec has been updated (new requirements added) but docs still reflect the old version
 
 ### 3. Report — Categorize discrepancies
 
@@ -100,3 +109,5 @@ When creating new doc pages, follow the existing conventions:
 | Fixing docs without reading the actual code | Always read implementation before editing docs |
 | Updating one location but not others | Same info may appear in README, docs site, and CLAUDE.md — update all |
 | Creating doc pages without matching sibling conventions | Check frontmatter, sidebar order, tone of existing pages first |
+| Ignoring `openspec/specs/` as a source of truth | Specs define canonical requirements — always cross-check against them |
+| Assuming docs are correct when spec disagrees | Spec is the authority; if they conflict, docs should be updated to match spec |
