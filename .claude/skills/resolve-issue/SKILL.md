@@ -30,7 +30,7 @@ openspec status --change "<name>" --json
 
 Based on artifact completion:
 
-- **No artifacts done** → resume from Phase 1 (Design)
+- **No proposal yet** → resume from Phase 0 (Explore). The explore phase is interactive, so the user can skip ahead to Phase 1 if they've already explored.
 - **proposal/design/specs done, tasks done** → resume from Phase 2 (Implement), check task progress in `tasks.md`
 - **All tasks complete** → resume from Phase 3 (Verify and Ship)
 
@@ -113,6 +113,23 @@ Ask the user via AskUserQuestion:
 - **"I have additional context"** — let the user add info before proceeding
 
 ## Phases
+
+### Phase 0: Explore
+
+Use the `openspec-explore` skill to interactively explore the problem space with the user before committing to a design.
+
+The goal of this phase is to:
+
+- Clarify ambiguous requirements or edge cases in the issue
+- Investigate the relevant codebase areas (existing code, data model, dependencies)
+- Discuss trade-offs and possible approaches
+- Surface hidden complexity or constraints early
+
+The explore session should be grounded in the issue context gathered during Preflight. Pass the issue summary, key requirements, and any additional user context into the explore session.
+
+This phase is interactive — continue the exploration dialogue until the user is satisfied that the problem is well-understood. The user may end the exploration explicitly (e.g., "looks good", "let's proceed") or the explore skill may naturally conclude.
+
+Once exploration is complete, proceed to Phase 1.
 
 ### Phase 1: Design
 
