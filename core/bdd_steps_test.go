@@ -951,6 +951,53 @@ func (dc *domainContext) theSchemaShouldUseSelectInsteadOfEnum(typeName string) 
 	return fmt.Errorf("no select property found in schema %q", typeName)
 }
 
+// ── Property emoji steps ────────────────────────────────────────────────────
+
+func (dc *domainContext) aTypeSchemaWithPropertyHavingEmoji(typeName, propName, emoji string) {
+	schema := fmt.Sprintf("name: %s\nproperties:\n  - name: %s\n    type: string\n    emoji: %s\n", typeName, propName, emoji)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
+func (dc *domainContext) aTypeSchemaWithPropertiesHavingUniqueEmojis(typeName string) {
+	schema := fmt.Sprintf(`name: %s
+properties:
+  - name: title
+    type: string
+    emoji: 📖
+  - name: rating
+    type: number
+    emoji: ⭐
+`, typeName)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
+func (dc *domainContext) aTypeSchemaWithPropertiesHavingDuplicateEmojis(typeName string) {
+	schema := fmt.Sprintf(`name: %s
+properties:
+  - name: title
+    type: string
+    emoji: 👤
+  - name: author
+    type: string
+    emoji: 👤
+`, typeName)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
+func (dc *domainContext) aTypeSchemaWithSomePropertiesMissingEmojis(typeName string) {
+	schema := fmt.Sprintf(`name: %s
+properties:
+  - name: title
+    type: string
+  - name: author
+    type: string
+  - name: rating
+    type: number
+    emoji: ⭐
+`, typeName)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
 // ── Property filtering steps ────────────────────────────────────────────────
 
 func (dc *domainContext) aTypeSchemaWithProperties(typeName, propList string) {
@@ -1167,6 +1214,12 @@ func initDomainSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the object should have validation errors$`, dc.theObjectShouldHaveValidationErrors)
 	ctx.Step(`^I migrate schemas$`, dc.iMigrateSchemas)
 	ctx.Step(`^the "([^"]*)" schema should use select instead of enum$`, dc.theSchemaShouldUseSelectInsteadOfEnum)
+
+	// Property emoji steps
+	ctx.Step(`^a type schema "([^"]*)" with property "([^"]*)" having emoji "([^"]*)"$`, dc.aTypeSchemaWithPropertyHavingEmoji)
+	ctx.Step(`^a type schema "([^"]*)" with properties having unique emojis$`, dc.aTypeSchemaWithPropertiesHavingUniqueEmojis)
+	ctx.Step(`^a type schema "([^"]*)" with properties having duplicate emojis$`, dc.aTypeSchemaWithPropertiesHavingDuplicateEmojis)
+	ctx.Step(`^a type schema "([^"]*)" with some properties missing emojis$`, dc.aTypeSchemaWithSomePropertiesMissingEmojis)
 
 	// Property filtering steps
 	ctx.Step(`^a type schema "([^"]*)" with properties "([^"]*)"$`, dc.aTypeSchemaWithProperties)
