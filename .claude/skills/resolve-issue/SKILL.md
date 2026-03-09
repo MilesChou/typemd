@@ -112,6 +112,28 @@ Ask the user via AskUserQuestion:
 - **"Looks correct"** — proceed
 - **"I have additional context"** — let the user add info before proceeding
 
+## Workspace Setup
+
+Before entering the phases, set up an isolated working environment so that all artifacts (explore notes, design docs, code) live on a feature branch.
+
+If a branch matching `fix/issue-<N>-*` or `feat/issue-<N>-*` already exists, inform the user and ask whether to reuse it or create a new one.
+
+Ask the user how to set up the working environment via AskUserQuestion:
+
+- **"Worktree (isolated)"** — invoke `superpowers:using-git-worktrees` skill
+- **"Branch in current repo"** — create a branch directly
+
+Branch naming convention:
+
+- Bug → `fix/issue-<N>-<slug>`
+- Feature / Task / Epic → `feat/issue-<N>-<slug>`
+
+Where `<slug>` is a short kebab-case summary derived from the issue title (max 5 words).
+
+```bash
+git checkout -b <branch-name>
+```
+
 ## Phases
 
 ### Phase 0: Explore
@@ -146,28 +168,6 @@ The propose skill will create:
 Present the generated artifacts to the user for review before proceeding.
 
 ### Phase 2: Implement
-
-#### Branch Strategy
-
-If a branch matching `fix/issue-<N>-*` or `feat/issue-<N>-*` already exists, inform the user and ask whether to reuse it or create a new one.
-
-Ask the user how to set up the working environment via AskUserQuestion:
-
-- **"Worktree (isolated)"** — invoke `superpowers:using-git-worktrees` skill
-- **"Branch in current repo"** — create a branch directly
-
-Branch naming convention:
-
-- Bug → `fix/issue-<N>-<slug>`
-- Feature / Task / Epic → `feat/issue-<N>-<slug>`
-
-Where `<slug>` is a short kebab-case summary derived from the issue title (max 5 words).
-
-```bash
-git checkout -b <branch-name>
-```
-
-#### Implementation
 
 Use the `openspec-apply-change` skill to execute the tasks from the OpenSpec change. The apply skill reads `tasks.md` and implements each task in order.
 

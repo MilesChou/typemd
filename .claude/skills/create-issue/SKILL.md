@@ -17,13 +17,14 @@ All issue content (title, body) MUST be written in **English**.
 
 ### Step 1: Understand the idea
 
-Ask the user what they want to achieve. One question at a time:
+Use the `superpowers:brainstorming` skill to explore the user's idea. The brainstorming session helps shape a vague idea into a concrete, actionable issue by:
 
-1. **What's the problem or idea?** — Understand the motivation first.
-2. **What's the expected behavior?** — Clarify what "done" looks like.
-3. **Any constraints or context?** — Related issues, technical considerations, scope.
+- Understanding the motivation and problem space
+- Clarifying what "done" looks like
+- Surfacing constraints, related issues, and technical considerations
+- Narrowing scope if the idea is too broad
 
-Use multiple choice (via AskUserQuestion) when possible. Keep it conversational — skip questions that are already answered from context.
+Once brainstorming concludes with a clear direction, proceed to the next step.
 
 ### Step 2: Check for duplicates
 
