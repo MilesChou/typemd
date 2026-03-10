@@ -89,19 +89,32 @@ Present the milestones above as options using AskUserQuestion. Always include a 
 
 ### Step 6: Relationships (optional)
 
-Ask whether this issue has relationships to other issues. Use AskUserQuestion with options:
+Proactively analyze existing issues to suggest relationships. Do NOT simply ask the user — do the research yourself and present findings.
 
-- **"No relationships"** — skip
-- **"Sub-issue of an existing issue"** — will set a parent issue
-- **"Blocked by another issue"** — will add a blocking relationship
+Fetch open issues with `gh issue list --state open --json number,title,labels,issueType --limit 100`, then compare the new issue against them. Look for:
 
-If the user selects a relationship, ask them to specify the issue number. Look up the issue's node ID:
+- **Potential parent (epic)**: Is there an open Epic that this issue logically belongs under? Match by topic, component, or feature area.
+- **Potential blockers**: Are there open issues that must be resolved before this one can start? Look for prerequisite features, infrastructure work, or dependencies.
+- **Related issues**: Issues in the same area that aren't parent/blocker but worth cross-referencing.
 
-```bash
-gh issue view <number> --json id --jq '.id'
-```
+Present your findings to the user via AskUserQuestion. Format:
 
-Multiple relationships can be set. After the user is done, proceed to the next step.
+> **建議的關聯：**
+>
+> - **Parent**: #42 "Web UI storage interface" (Epic) — 這個 issue 屬於 Web UI 的範疇
+> - **Blocked by**: #38 "Add VaultStorage abstraction" — 需要先完成 storage 介面
+> - **Related**: #45 "React component library" — 同為 Web UI 元件
+>
+> 或者沒有找到明顯關聯。
+
+Options:
+- **"Accept all"** — apply all suggested relationships
+- **"Let me pick"** — user selects which to keep
+- **"No relationships"** — skip all
+
+If the user wants to pick, present each suggestion individually for confirmation.
+
+For confirmed relationships, look up the issue node ID with `gh issue view <number> --json id --jq '.id'`. Multiple relationships can be set. After the user confirms, proceed to the next step.
 
 ### Step 7: Draft and confirm
 
