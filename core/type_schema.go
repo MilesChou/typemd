@@ -74,6 +74,7 @@ type Option struct {
 // Property defines a single property in a type schema.
 type Property struct {
 	Name          string   `yaml:"name"`
+	Use           string   `yaml:"use,omitempty"`
 	Type          string   `yaml:"type"`
 	Emoji         string   `yaml:"emoji,omitempty"`
 	Pin           int      `yaml:"pin,omitempty"`
@@ -83,6 +84,11 @@ type Property struct {
 	Multiple      bool     `yaml:"multiple,omitempty"`
 	Bidirectional bool     `yaml:"bidirectional,omitempty"`
 	Inverse       string   `yaml:"inverse,omitempty"`
+}
+
+// SharedPropertiesFile represents the .typemd/properties.yaml file.
+type SharedPropertiesFile struct {
+	Properties []Property `yaml:"properties"`
 }
 
 
@@ -130,6 +136,7 @@ var defaultTypes = map[string]TypeSchema{
 // LoadType loads a type schema by name.
 // It first looks for a custom YAML file in .typemd/types/{name}.yaml,
 // then falls back to built-in defaults.
+// If the schema contains `use` entries, they are resolved from shared properties.
 func (v *Vault) LoadType(name string) (*TypeSchema, error) {
 	path := filepath.Join(v.TypesDir(), name+".yaml")
 
@@ -139,6 +146,12 @@ func (v *Vault) LoadType(name string) (*TypeSchema, error) {
 		if err := yaml.Unmarshal(data, &schema); err != nil {
 			return nil, fmt.Errorf("parse type schema %s: %w", name, err)
 		}
+
+		// Resolve use entries if any exist
+		if err := v.resolveSchemaUseEntries(&schema); err != nil {
+			return nil, fmt.Errorf("resolve type schema %s: %w", name, err)
+		}
+
 		return &schema, nil
 	}
 
@@ -147,6 +160,26 @@ func (v *Vault) LoadType(name string) (*TypeSchema, error) {
 	}
 
 	return nil, fmt.Errorf("unknown type: %s", name)
+}
+
+// resolveSchemaUseEntries resolves use entries in a schema if any are present.
+func (v *Vault) resolveSchemaUseEntries(schema *TypeSchema) error {
+	hasUse := false
+	for _, p := range schema.Properties {
+		if p.Use != "" {
+			hasUse = true
+			break
+		}
+	}
+	if !hasUse {
+		return nil
+	}
+
+	_, err := v.LoadSharedProperties()
+	if err != nil {
+		return err
+	}
+	return resolveUseEntries(schema, v.sharedPropsMap)
 }
 
 // validPropertyTypes lists allowed property types.
@@ -162,16 +195,112 @@ var validPropertyTypes = map[string]bool{
 	"relation":     true,
 }
 
+// validatePropertyType validates the type field and related constraints of a property.
+// Returns validation errors with the given property name prefix.
+func validatePropertyType(prop Property, namePrefix string) []error {
+	var errs []error
+
+	if prop.Type == "" {
+		errs = append(errs, fmt.Errorf("%s: missing required field: type", namePrefix))
+		return errs
+	}
+
+	if prop.Type == "enum" {
+		errs = append(errs, fmt.Errorf("%s: type \"enum\" is no longer supported, use \"select\" with \"options\" instead", namePrefix))
+		return errs
+	}
+
+	if !validPropertyTypes[prop.Type] {
+		errs = append(errs, fmt.Errorf("%s: invalid type %q (valid: string, number, date, datetime, url, checkbox, select, multi_select, relation)", namePrefix, prop.Type))
+		return errs
+	}
+
+	if (prop.Type == "select" || prop.Type == "multi_select") && len(prop.Options) == 0 {
+		errs = append(errs, fmt.Errorf("%s: %s type requires non-empty options", namePrefix, prop.Type))
+	}
+
+	if prop.Type == "relation" && prop.Target == "" {
+		errs = append(errs, fmt.Errorf("%s: relation type requires target", namePrefix))
+	}
+
+	return errs
+}
+
 // ValidateSchema validates a type schema itself for correctness.
-func ValidateSchema(schema *TypeSchema) []error {
+// If sharedProps is provided, it also validates `use` entries against shared properties.
+func ValidateSchema(schema *TypeSchema, sharedProps ...[]Property) []error {
 	var errs []error
 	if schema.Name == "" {
 		errs = append(errs, fmt.Errorf("schema missing required field: name"))
 	}
+
+	// Build shared properties map if provided
+	var sharedMap map[string]Property
+	if len(sharedProps) > 0 && sharedProps[0] != nil {
+		sharedMap = SharedPropertiesMap(sharedProps[0])
+	}
+
 	seen := make(map[string]bool)
 	seenEmoji := make(map[string]string) // emoji -> property name
 	seenPin := make(map[int]string)      // pin -> property name
 	for i, prop := range schema.Properties {
+		// Handle `use` entries
+		if prop.Use != "" {
+			if prop.Name != "" {
+				errs = append(errs, fmt.Errorf("property[%d]: \"use\" and \"name\" are mutually exclusive", i))
+				continue
+			}
+
+			// Validate only pin and emoji overrides are present
+			if err := validateUseOverrides(i, prop); err != nil {
+				errs = append(errs, err)
+				continue
+			}
+
+			// Validate reference exists in shared properties
+			if sharedMap != nil {
+				shared, ok := sharedMap[prop.Use]
+				if !ok {
+					errs = append(errs, fmt.Errorf("property[%d]: shared property %q not found", i, prop.Use))
+					continue
+				}
+
+				// Use the shared property name for duplicate checking
+				propName := shared.Name
+				if seen[propName] {
+					errs = append(errs, fmt.Errorf("property %q: duplicate property name", propName))
+				}
+				seen[propName] = true
+
+				// Check emoji uniqueness (use override or shared)
+				emoji := prop.Emoji
+				if emoji == "" {
+					emoji = shared.Emoji
+				}
+				if emoji != "" {
+					if otherProp, ok := seenEmoji[emoji]; ok {
+						errs = append(errs, fmt.Errorf("property %q: duplicate property emoji %q (already used by %q)", propName, emoji, otherProp))
+					}
+					seenEmoji[emoji] = propName
+				}
+
+				// Check pin uniqueness (use override or shared)
+				pin := prop.Pin
+				if pin == 0 {
+					pin = shared.Pin
+				}
+				if pin < 0 {
+					errs = append(errs, fmt.Errorf("property %q: pin value must be a positive integer, got %d", propName, pin))
+				} else if pin > 0 {
+					if otherProp, ok := seenPin[pin]; ok {
+						errs = append(errs, fmt.Errorf("property %q: duplicate pin value %d (already used by %q)", propName, pin, otherProp))
+					}
+					seenPin[pin] = propName
+				}
+			}
+			continue
+		}
+
 		if prop.Name == "" {
 			errs = append(errs, fmt.Errorf("property[%d]: missing required field: name", i))
 			continue
@@ -179,6 +308,12 @@ func ValidateSchema(schema *TypeSchema) []error {
 		if prop.Name == NameProperty {
 			errs = append(errs, fmt.Errorf("property %q: %q is a reserved system property and cannot be defined in type schemas", prop.Name, NameProperty))
 			continue
+		}
+		// Check if local property name conflicts with a shared property name
+		if sharedMap != nil {
+			if _, ok := sharedMap[prop.Name]; ok {
+				errs = append(errs, fmt.Errorf("property %q: conflicts with a shared property name", prop.Name))
+			}
 		}
 		if seen[prop.Name] {
 			errs = append(errs, fmt.Errorf("property %q: duplicate property name", prop.Name))
@@ -198,26 +333,37 @@ func ValidateSchema(schema *TypeSchema) []error {
 			}
 			seenPin[prop.Pin] = prop.Name
 		}
-		if prop.Type == "" {
-			errs = append(errs, fmt.Errorf("property %q: missing required field: type", prop.Name))
+		typeErrs := validatePropertyType(prop, fmt.Sprintf("property %q", prop.Name))
+		errs = append(errs, typeErrs...)
+		if len(typeErrs) > 0 && (prop.Type == "" || prop.Type == "enum" || !validPropertyTypes[prop.Type]) {
 			continue
-		}
-		if prop.Type == "enum" {
-			errs = append(errs, fmt.Errorf("property %q: type \"enum\" is no longer supported, use \"select\" with \"options\" instead (run tmd migrate to convert)", prop.Name))
-			continue
-		}
-		if !validPropertyTypes[prop.Type] {
-			errs = append(errs, fmt.Errorf("property %q: invalid type %q (valid: string, number, date, datetime, url, checkbox, select, multi_select, relation)", prop.Name, prop.Type))
-			continue
-		}
-		if (prop.Type == "select" || prop.Type == "multi_select") && len(prop.Options) == 0 {
-			errs = append(errs, fmt.Errorf("property %q: %s type requires non-empty options", prop.Name, prop.Type))
-		}
-		if prop.Type == "relation" && prop.Target == "" {
-			errs = append(errs, fmt.Errorf("property %q: relation type requires target", prop.Name))
 		}
 	}
 	return errs
+}
+
+// validateUseOverrides checks that a `use` property entry only has allowed override fields.
+func validateUseOverrides(index int, prop Property) error {
+	// Only pin and emoji overrides are allowed on use entries.
+	disallowed := []struct {
+		fieldName string
+		isSet     bool
+	}{
+		{"type", prop.Type != ""},
+		{"options", len(prop.Options) > 0},
+		{"target", prop.Target != ""},
+		{"default", prop.Default != nil},
+		{"multiple", prop.Multiple},
+		{"bidirectional", prop.Bidirectional},
+		{"inverse", prop.Inverse != ""},
+	}
+
+	for _, f := range disallowed {
+		if f.isSet {
+			return fmt.Errorf("property[%d] use %q: only \"pin\" and \"emoji\" overrides are allowed on \"use\" entries, got %q", index, prop.Use, f.fieldName)
+		}
+	}
+	return nil
 }
 
 // ValidateObject validates object properties against a type schema.
