@@ -18,10 +18,10 @@ Type: 📚 book
 
 Properties
 ──────────
-  title: string
-  status: enum (reading, read, to-read)
-  rating: number
-  author: relation → person
+  title (string)
+  status (select) [to-read, reading, done]
+  rating (number)
+  author (relation) -> person (bidirectional) inverse=books
 ```
 
 如果指定的 Type 不存在，會回傳錯誤。

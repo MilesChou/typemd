@@ -33,7 +33,7 @@ A Relation is a named, typed link between two Objects. Unlike a simple hyperlink
 
 ## Property
 
-A Property is a named field on an Object, defined by its Type schema. Properties have types like `string`, `number`, `enum`, or `relation`. They are stored in the YAML frontmatter of the Markdown file.
+A Property is a named field on an Object, defined by its Type schema. Properties have types like `string`, `number`, `date`, `select`, or `relation`. They are stored in the YAML frontmatter of the Markdown file. Properties can also have optional attributes like `emoji` (visual icon), `pin` (prominent display), and `default` (default value).
 
 ## Slug
 

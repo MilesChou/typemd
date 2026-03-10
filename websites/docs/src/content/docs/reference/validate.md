@@ -19,14 +19,14 @@ Scans all `.typemd/types/*.yaml` files and checks:
 
 - `name` field is required
 - Each property must have a `name` and `type`
-- `enum` properties must define `values`
+- `select`/`multi_select` properties must define `options`
 - `relation` properties must define `target`
 
 ### Phase 2: Object Validation
 
 Validates all object properties against their type schema:
 
-- `enum` values must be in the allowed `values` list
+- `select`/`multi_select` values must be in the allowed `options` list
 - `number` properties must be numeric
 - `relation` targets must match the expected type
 
@@ -50,7 +50,7 @@ On failure, errors are grouped by phase with details:
 
 ```
 Schema errors:
-  book.yaml: property "status": enum must define values
+  book.yaml: property "status": select type requires non-empty options
 
 Object errors:
   book/example: property "rating": expected number, got "abc"

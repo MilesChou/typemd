@@ -199,8 +199,11 @@ properties:
     bidirectional: true
     inverse: books
   - name: status
-    type: enum
-    values: [to-read, reading, done]
+    type: select
+    options:
+      - value: to-read
+      - value: reading
+      - value: done
     default: to-read
   - name: rating
     type: number
@@ -216,7 +219,7 @@ Relation 在 Type schema 中定義為 `type: relation` 屬性。使用 `bidirect
 # .typemd/types/person.yaml
 name: person
 properties:
-  - name: name
+  - name: role
     type: string
   - name: books
     type: relation

@@ -21,8 +21,11 @@ properties:
   - name: title
     type: string
   - name: status
-    type: enum
-    values: [to-read, reading, done]
+    type: select
+    options:
+      - value: to-read
+      - value: reading
+      - value: done
     default: to-read
   - name: rating
     type: number
@@ -36,7 +39,7 @@ Types give your knowledge base **consistency** and **queryability**:
 
 - **Consistency** — Every book Object has the same set of properties, so you don't end up with `status` on one book and `reading_state` on another.
 - **Queryability** — Because properties are typed, you can query precisely: "show me all books where status is reading and rating > 4".
-- **Validation** — TypeMD validates property values against the schema (e.g. enum values must be in the allowed list), catching mistakes early.
+- **Validation** — TypeMD validates property values against the schema (e.g. select values must be in the allowed options), catching mistakes early.
 
 ## Built-in Types
 
@@ -44,7 +47,7 @@ TypeMD ships with three built-in Types to get you started:
 
 | Type | Properties |
 |------|------------|
-| 📚 `book` | title (string), status (enum: to-read/reading/done), rating (number) |
+| 📚 `book` | title (string), status (select: to-read/reading/done), rating (number) |
 | 👤 `person` | role (string) |
 | 📝 `note` | title (string), tags (string) |
 
@@ -64,7 +67,12 @@ Each property in a Type schema has a data type:
 |------|-------------|---------|
 | `string` | Text | `"Go in Action"` |
 | `number` | Integer or float | `42`, `3.14` |
-| `enum` | One of a fixed set of values | `"reading"` |
+| `date` | Date in YYYY-MM-DD format | `"2026-01-15"` |
+| `datetime` | ISO 8601 datetime | `"2026-01-15T10:30:00"` |
+| `url` | URL with http/https scheme | `"https://example.com"` |
+| `checkbox` | Boolean value | `true`, `false` |
+| `select` | One of a fixed set of options | `"reading"` |
+| `multi_select` | Multiple values from options | `["go", "programming"]` |
 | `relation` | A link to another Object | `"person/alan-donovan"` |
 
 For relation properties, see the [Relations](/concepts/relations) page for details on `target`, `bidirectional`, `inverse`, and `multiple` fields.
@@ -76,6 +84,8 @@ TypeMD uses lenient validation:
 - Only validates properties defined in the schema
 - Extra properties (not in schema) are allowed
 - Missing properties do not cause errors
-- `enum` values must be in the `values` list
+- `select`/`multi_select` values must be in the defined `options` list
 - `number` must be numeric
+- `date` must be in YYYY-MM-DD format
+- `url` must start with http:// or https://
 - `relation` targets are checked for correct type

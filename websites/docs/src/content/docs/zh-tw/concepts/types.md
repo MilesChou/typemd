@@ -21,8 +21,11 @@ properties:
   - name: title
     type: string
   - name: status
-    type: enum
-    values: [to-read, reading, done]
+    type: select
+    options:
+      - value: to-read
+      - value: reading
+      - value: done
     default: to-read
   - name: rating
     type: number
@@ -36,7 +39,7 @@ Type 為你的知識庫帶來**一致性**和**可查詢性**：
 
 - **一致性** — 每個 book Object 都有相同的屬性集合，不會出現一本書用 `status`、另一本用 `reading_state` 的情況。
 - **可查詢性** — 因為屬性有型別，你可以精確查詢：「顯示所有 status 是 reading 且 rating > 4 的書」。
-- **驗證** — TypeMD 會根據 schema 驗證屬性值（例如 enum 值必須在允許清單中），及早發現錯誤。
+- **驗證** — TypeMD 會根據 schema 驗證屬性值（例如 select 值必須在允許的 options 中），及早發現錯誤。
 
 ## 內建 Type
 
@@ -44,7 +47,7 @@ TypeMD 內建三種 Type 讓你快速開始：
 
 | Type | 屬性 |
 |------|------|
-| 📚 `book` | title (string)、status (enum: to-read/reading/done)、rating (number) |
+| 📚 `book` | title (string)、status (select: to-read/reading/done)、rating (number) |
 | 👤 `person` | role (string) |
 | 📝 `note` | title (string)、tags (string) |
 
@@ -64,7 +67,12 @@ Type schema 中每個屬性都有一個資料型別：
 |------|------|------|
 | `string` | 文字 | `"Go in Action"` |
 | `number` | 整數或浮點數 | `42`、`3.14` |
-| `enum` | 固定集合中的值 | `"reading"` |
+| `date` | YYYY-MM-DD 格式的日期 | `"2026-01-15"` |
+| `datetime` | ISO 8601 日期時間 | `"2026-01-15T10:30:00"` |
+| `url` | http/https 開頭的網址 | `"https://example.com"` |
+| `checkbox` | 布林值 | `true`、`false` |
+| `select` | 固定選項中的單一值 | `"reading"` |
+| `multi_select` | 固定選項中的多個值 | `["go", "programming"]` |
 | `relation` | 連結到另一個 Object | `"person/alan-donovan"` |
 
 Relation 屬性的 `target`、`bidirectional`、`inverse` 和 `multiple` 欄位，請參閱 [Relation](/zh-tw/concepts/relations) 頁面。
@@ -76,6 +84,8 @@ TypeMD 採用寬鬆驗證：
 - 只驗證 schema 中定義的屬性
 - 允許額外屬性（不在 schema 中的）
 - 缺少的屬性不會產生錯誤
-- `enum` 的值必須在 `values` 清單中
+- `select`/`multi_select` 的值必須在定義的 `options` 中
 - `number` 必須是數值
+- `date` 必須是 YYYY-MM-DD 格式
+- `url` 必須以 http:// 或 https:// 開頭
 - `relation` 的目標會檢查 Type 是否正確

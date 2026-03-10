@@ -19,14 +19,14 @@ tmd type validate
 
 - `name` 欄位為必填
 - 每個屬性必須有 `name` 和 `type`
-- `enum` 屬性必須定義 `values`
+- `select`/`multi_select` 屬性必須定義 `options`
 - `relation` 屬性必須定義 `target`
 
 ### 階段 2：Object 驗證
 
 依據 Type schema 驗證所有 Object 屬性：
 
-- `enum` 的值必須在允許的 `values` 清單中
+- `select`/`multi_select` 的值必須在允許的 `options` 清單中
 - `number` 屬性必須是數值
 - `relation` 的目標必須符合預期的 Type
 
@@ -50,7 +50,7 @@ Validation passed.
 
 ```
 Schema errors:
-  book.yaml: property "status": enum must define values
+  book.yaml: property "status": select type requires non-empty options
 
 Object errors:
   book/example: property "rating": expected number, got "abc"
