@@ -165,6 +165,35 @@ The propose skill will create:
 - `specs/<capability>/spec.md` — behavioral requirements with scenarios
 - `tasks.md` — implementation steps
 
+**Task ordering must follow test-first (BDD → TDD):**
+
+For each feature group in `tasks.md`, tasks MUST be ordered test-first:
+
+1. **BDD scenario first** — write `.feature` file with Gherkin scenarios (for `core/` and `tui/` changes)
+2. **Step definitions** — implement BDD step definitions (initially failing)
+3. **Implementation** — write production code to make BDD scenarios pass
+4. **Unit tests** — add unit tests for edge cases, exact values, error conditions
+
+Example of correct ordering:
+```
+## 1. Core: GetName
+
+- [ ] 1.1 Write BDD scenarios for GetName (name present, missing, empty)
+- [ ] 1.2 Implement step definitions for GetName scenarios
+- [ ] 1.3 Add GetName() method to Object (make scenarios pass)
+- [ ] 1.4 Add unit tests for GetName edge cases (whitespace, special chars)
+```
+
+Example of **incorrect** ordering (implementation before tests):
+```
+## 1. Core: GetName
+
+- [ ] 1.1 Add GetName() method to Object    ← WRONG: implementation first
+- [ ] 1.2 Write BDD scenarios for GetName   ← tests after implementation
+```
+
+For `cmd/` changes, BDD tests are usually unnecessary (CLI delegates to `core/`). For `mcp/`, use unit tests. See CLAUDE.md "Testing" section for full guidance.
+
 Present the generated artifacts to the user for review before proceeding.
 
 ### Phase 2: Implement
