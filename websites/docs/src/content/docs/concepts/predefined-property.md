@@ -7,6 +7,10 @@ sidebar:
 
 Every property in a type schema has a `type` that determines what values it accepts and how they are validated.
 
+:::note
+This page covers property types for **schema-defined properties** — the ones you declare in `.typemd/types/*.yaml`. For the system properties that TypeMD manages automatically (`name`, `created_at`, `updated_at`), see [System properties](/concepts/data-model#system-properties).
+:::
+
 ## Available Types
 
 | Type | Description | Example value |
@@ -55,7 +59,7 @@ Accepts dates in `YYYY-MM-DD` format. YAML auto-parsed dates (e.g., `2026-03-09`
 Accepts ISO 8601 date-time values with a time component. Must include hours and minutes at minimum.
 
 ```yaml
-- name: created_at
+- name: due_at
   type: datetime
 ```
 
