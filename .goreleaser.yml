@@ -33,6 +33,7 @@ changelog:
 
 brews:
   - name: typemd-cli
+    directory: Formula
     repository:
       owner: typemd
       name: homebrew-tap
