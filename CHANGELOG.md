@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
 ## [v0.2.0] - 2026-03-11
 
+### Breaking Changes
+
+- `name` Property — now a reserved system property; type schemas that manually define a `name` property will fail validation. Remove any `name` entries from your type schemas before upgrading (#187)
+
 ### Added
 
 - Property Type System — define 9 property types (`string`, `text`, `number`, `bool`, `date`, `datetime`, `url`, `enum`, `relation`) in type schemas (#8)

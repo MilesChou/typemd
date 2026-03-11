@@ -6,6 +6,10 @@
 
 ## [v0.2.0] - 2026-03-11
 
+### 破壞性變更
+
+- `name` 屬性 — 現為保留系統屬性；型別 schema 若手動定義 `name` 屬性，升級後驗證將會失敗。升級前請先移除型別 schema 中的 `name` 定義 (#187)
+
 ### 新增
 
 - 屬性型別系統 — 在型別 schema 中定義 9 種屬性型別（`string`、`text`、`number`、`bool`、`date`、`datetime`、`url`、`enum`、`relation`）(#8)

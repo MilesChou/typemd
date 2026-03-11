@@ -64,6 +64,10 @@ go install github.com/typemd/typemd/cmd/tmd@v<VERSION>
 
 Pre-built binaries for macOS, Linux, and Windows are available below.
 
+### ⚠️ Breaking Changes
+
+- Change Name — what breaks and how to migrate (#issue)
+
 ### Added
 
 - Feature Name — one-sentence description (#issue)
@@ -95,6 +99,7 @@ Pre-built binaries for macOS, Linux, and Windows are available below.
 - **Bullet format** — `Feature Name — one-sentence description (#issue)`
 - **Issue numbers required** — Every entry must reference the corresponding issue
 - **Pre-release** — For `v0.x`, mark as pre-release
+- **Breaking changes** — Always check for breaking changes (schema changes, removed commands, renamed flags, changed behavior). If any exist, add a `### ⚠️ Breaking Changes` section at the top with migration instructions. Also add a `### Breaking Changes` section to the CHANGELOG.
 
 ### CHANGELOG
 
