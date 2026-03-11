@@ -37,6 +37,17 @@ typemd is a local-first CLI knowledge management tool. Objects (books, people, i
 - **No SQLite in browser**: try.typemd.io uses in-memory index built from GitHub API responses
 - **Design principle**: SQLite is optional acceleration, not a hard dependency — files are always the source of truth
 
+## Language Convention
+
+**English is the primary language** for all project artifacts:
+
+- **Issues** — titles, descriptions, comments
+- **Commits** — commit messages and bodies
+- **Skills** — skill content in `.claude/skills/`
+- **Releases** — release notes and CHANGELOG
+
+Blog posts are the exception: written in Traditional Chinese (zh-tw) first, then synced to English via the `sync-blog` skill.
+
 ## Build & Test
 
 ```bash
