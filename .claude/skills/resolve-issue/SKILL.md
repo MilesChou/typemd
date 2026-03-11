@@ -72,6 +72,8 @@ Evaluate each issue using these criteria (highest priority first):
 3. **Low effort, high impact** — small scope issues that unblock progress (labeled `good first issue`, `quick win`, or estimated as small)
 4. **Dependencies resolved** — issues whose blockers are already closed
 
+**All issue types are valid candidates**, including `discussion` issues. If an issue is assigned to a milestone, it needs to be resolved in that timeframe regardless of its label. Discussion issues follow a different resolution path via the `resolve-discussion` skill (see Issue Type Routing below).
+
 **Step 4: Present top 3 candidates**
 
 Ask the user via AskUserQuestion with the top 3 recommended issues:
@@ -111,6 +113,13 @@ Ask the user via AskUserQuestion:
 
 - **"Looks correct"** — proceed
 - **"I have additional context"** — let the user add info before proceeding
+
+### Issue Type Routing
+
+After confirming understanding, check the issue's labels:
+
+- If the issue has a **`discussion` label** → invoke the `resolve-discussion` skill and stop. Discussion issues follow a different resolution path (explore → facilitate → document & close) with no code changes.
+- Otherwise → continue to **Workspace Setup** below.
 
 ## Workspace Setup
 
