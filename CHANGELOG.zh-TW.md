@@ -4,6 +4,34 @@
 
 格式依循 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [v0.2.0] - 2026-03-11
+
+### 新增
+
+- 屬性型別系統 — 在型別 schema 中定義 9 種屬性型別（`string`、`text`、`number`、`bool`、`date`、`datetime`、`url`、`enum`、`relation`）(#8)
+- 共用屬性 — 在 `.typemd/properties.yaml` 定義可重用的屬性，並透過 `use` 在型別 schema 中參照 (#188)
+- 型別 Emoji — 在型別 schema 加入 `emoji` 欄位，於 TUI 中視覺化識別型別 (#145)
+- 屬性 Emoji — 在屬性 schema 加入 `emoji` 欄位，用於緊湊顯示 (#144)
+- TUI 標題面板 — 瀏覽物件時顯示型別 emoji 與物件名稱的專用標題列 (#169)
+- TUI 置頂屬性 — 在 schema 中標記 `pinned: true`，使屬性在 TUI 詳細檢視中突出顯示 (#168)
+- TUI Session 持久化 — 游標位置、選取物件與面板狀態在 TUI 重新啟動後恢復 (#82)
+- `--readonly` 旗標 — 以唯讀模式啟動 TUI，停用所有編輯功能 (#107)
+- `--reindex` 旗標 — 全域旗標，啟動時強制重建 SQLite 索引，取代原本的 `tmd reindex` 子指令 (#159)
+- 前綴比對 — 可用 ULID 後綴的短前綴解析物件，不需輸入完整 ID (#72)
+- Homebrew 安裝 — 透過 `brew install typemd/tap/tmd` 安裝 (#140)
+
+### 變更
+
+- `name` 屬性 — 現為必要系統屬性，自動從物件 slug 填入；型別 schema 不可自行定義名為 `name` 的屬性 (#187)
+- TUI 物件列表 — 群組標頭中顯示型別 emoji (#163)
+- 未定義屬性 — 型別 schema 未宣告的屬性在同步時會被靜默過濾 (#174)
+
+### 修正
+
+- Relation 顯示 — 移除 relation 屬性顯示值中的 ULID 後綴
+
+[v0.2.0]: https://github.com/typemd/typemd/releases/tag/v0.2.0
+
 ## [v0.1.0] - 2026-03-08
 
 ### 新增

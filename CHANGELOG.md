@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v0.2.0] - 2026-03-11
+
+### Added
+
+- Property Type System — define 9 property types (`string`, `text`, `number`, `bool`, `date`, `datetime`, `url`, `enum`, `relation`) in type schemas (#8)
+- Shared Properties — define reusable property definitions in `.typemd/properties.yaml` and reference them via `use` in type schemas (#188)
+- Emoji on Types — add an `emoji` field to type schemas for visual identification in the TUI (#145)
+- Emoji on Properties — add an `emoji` field to property schemas for compact display (#144)
+- TUI Title Panel — dedicated header showing the type emoji and object name when viewing an object (#169)
+- TUI Pinned Properties — mark properties as `pinned: true` in schema for prominent display in the TUI detail view (#168)
+- TUI Session Persistence — cursor position, selected object, and panel state are restored across TUI restarts (#82)
+- `--readonly` flag — launch the TUI in read-only mode to disable all editing (#107)
+- `--reindex` flag — global flag to force rebuild the SQLite index on startup, replacing the `tmd reindex` subcommand (#159)
+- Prefix Matching — resolve objects by a short prefix of their ULID suffix instead of the full ID (#72)
+- Homebrew Installation — install via `brew install typemd/tap/tmd` (#140)
+
+### Changed
+
+- `name` Property — now a required system property automatically populated from the object slug; type schemas cannot define a property named `name` (#187)
+- TUI Object List — type emoji shown in group headers alongside type name (#163)
+- Undefined Properties — properties not declared in the type schema are silently filtered during sync (#174)
+
+### Fixed
+
+- Relation Display — ULID suffix stripped from relation property display values
+
+[v0.2.0]: https://github.com/typemd/typemd/releases/tag/v0.2.0
+
 ## [v0.1.0] - 2026-03-08
 
 ### Added

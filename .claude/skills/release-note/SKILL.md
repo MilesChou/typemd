@@ -118,6 +118,23 @@ Update both `CHANGELOG.md` (English) and `CHANGELOG.zh-TW.md` (Chinese) at the p
 
 ## 3. Blog
 
+### Read the source before writing examples
+
+Before writing any code or YAML examples, read the actual implementation to verify syntax:
+
+```bash
+# Check example vault for correct schema format
+cat examples/book-vault/.typemd/types/*.yaml
+cat examples/book-vault/.typemd/properties.yaml
+
+# Check feature files for supported types and behaviors
+cat core/features/*.feature
+```
+
+Do not guess property types, field names, or YAML structure from issue titles or commit messages — always verify against real code.
+
+### Write the post
+
 Write a blog post at:
 
 ```
@@ -140,12 +157,15 @@ tags: [發布, 開發日誌]
 **Content guidelines:**
 
 - Write in Traditional Chinese (zh-tw)
-- Open with 1-2 sentences of context — why this release matters
-- Explain the key features with concrete examples (code snippets, commands)
+- Follow the [Capacities](https://capacities.io/whats-new) writing style: conversational, problem-solution framing, user-benefit focused, short punchy section titles
+- Use we, not I
+- Explain key features with concrete, **verified** examples (code snippets, commands)
 - Keep it engaging, not just a feature list — tell a story around the release theme
 - End with a forward-looking sentence about what's next
 
-After writing zh-tw, use the `sync-blog` skill to create the English version.
+**After writing zh-tw, present the draft to the user for review before writing the file. Only write the file after the user confirms.**
+
+After the user approves the zh-tw post, use the `sync-blog` skill to create the English version.
 
 ---
 
