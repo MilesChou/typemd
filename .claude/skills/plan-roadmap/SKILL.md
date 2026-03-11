@@ -15,33 +15,44 @@ All issue comments and milestone descriptions MUST be written in **English**.
 
 - One minor version = one week of work
 - Every release must deliver visible user value — avoid pure tech-debt or pure testing milestones
-- Epics and their children should stay in the same milestone (or move together)
-- Blocked issues cannot ship before their blockers
+- Parent issues are epic trackers (organizational only) — place them in the same milestone as their first child
+- Children of an epic may span multiple milestones; dependency order is between siblings, not parent → child
+- Blocked issues cannot ship before their blockers (check `blockedBy` between sibling issues)
 - Discussion-tagged issues need design first — don't schedule for immediate delivery
+- Themes drive issue selection — not just effort balancing
+- When a milestone is under budget, prefer non-business tasks (testing, infra, docs) over adding more features
 
 ## Process
 
 ### Step 1: Gather
 
-Fetch all milestones, their issues, and unassigned issues:
+Fetch all milestones, their issues, and unassigned issues. Use GraphQL for milestone issue lists — it returns authoritative milestone assignments unlike `gh issue list --milestone` which can be unreliable:
 
 ```bash
 # All milestones
 gh api repos/typemd/typemd/milestones --jq '.[] | {title, number, open_issues, closed_issues}'
 
-# Open issues for each milestone (run in parallel)
-gh issue list --milestone "v<VERSION>" --state open --json number,title,labels,body --limit 50
-# Repeat for every milestone
+# Open issues for each milestone via GraphQL (run all in parallel)
+gh api graphql -f query='query {
+  repository(owner:"typemd", name:"typemd") {
+    milestone(number: <N>) {
+      title
+      issues(first: 30, states: OPEN) {
+        nodes { number title labels(first: 5) { nodes { name } }
+          parent { number title state milestone { title } }
+        }
+      }
+    }
+  }
+}'
 
 # Open issues without a milestone
 gh issue list --search "no:milestone is:open" --json number,title,labels --limit 100
 ```
 
-Run the `gh issue list` commands for all milestones in parallel to minimize latency.
-
 ### Step 2: Analyze relationships
 
-For each issue across all milestones, query parent, sub-issues, and blocking relationships:
+For all milestone issues, query parent, sub-issues, and blocking relationships in parallel:
 
 ```bash
 gh api graphql -f query='query {
@@ -61,107 +72,52 @@ Build a dependency map:
 
 - **Epic groups** — parent + children should move together
 - **Block chains** — if A blocks B, A must ship first (same or earlier milestone)
-- **Cross-milestone blockers** — issues blocked by items in a later milestone (flag as problem)
+- **Cross-milestone blockers** — flag as problems
 
-### Step 3: Estimate effort
+### Step 3: Define themes for the next 5 releases
 
-Categorize each issue by effort:
+Look at the next 5 upcoming milestones. For each one, propose a **release theme** — a short, user-facing headline that:
+
+- Describes the user-visible value in a concrete, exciting way (e.g. "Type System is Here", "Built-in Types", "TUI Editing")
+- Follows naturally from the previous release
+- Respects dependency order
+
+**Headline style:** Think product update cards like Capacities — feature-forward, verb-driven, not abstract. "Navigation & Discovery" beats "Usability Improvements". Present all 5 themes together and discuss with the user before proceeding. Adjust based on feedback.
+
+**If a milestone has 0 open issues**, flag it as ready to release — don't force issues into it.
+
+### Step 4: Populate each themed milestone
+
+Work through each milestone **one at a time** with the user:
+
+1. **Start from existing issues** already assigned to that milestone
+2. **Scan all unassigned issues** for relevance to the theme — propose good candidates
+3. **Move out** issues that don't fit the theme (to a later milestone or backlog)
+4. **Check effort budget** — target 70–80% of weekly capacity (3.5–4 days)
+
+**When under budget:** Look for non-business tasks first — testing, infra, documentation — before adding more features. These are good fillers that don't dilute the milestone's theme.
+
+**Effort sizing:**
 
 | Size | Criteria | Estimate |
 |------|----------|----------|
-| **Small** | Single file change, clear scope, no design needed | < 1 day |
+| **Small** | Single file change, clear scope | < 1 day |
 | **Medium** | Multiple files, some design, tests needed | 1–2 days |
 | **Large** | Cross-package, significant design, new patterns | 3–5 days |
 
-**Estimation heuristics:**
+Heuristics: `discussion` label → add 1 day; new command → medium; epic tracker → sum children.
 
-- `discussion` label → needs design phase, add 1 day
-- Epic with open children → sum children's estimates
-- Already-closed children of epic → reduce parent estimate
-- `chore` label → typically small
-- New command/feature → medium unless it touches core data model
-- Dependency upgrade → medium-to-large (risk of breakage)
-
-**Weekly budget:** ~5 working days. Target 70–80% utilization (3.5–4 days of estimated work) to allow for unexpected complexity.
-
-### Step 4: Review unassigned issues
-
-Categorize unassigned issues (no milestone) by theme:
-
-| Category | Issues | Notes |
-|----------|--------|-------|
-| e.g. Web UI | #121 + children | Large epic, needs dedicated planning |
-| e.g. Core enhancements | #74, #137, ... | Candidates for near-term milestones |
-| e.g. Discussion/design | #120, #139, ... | Need design first |
-
-Identify **candidates for near-term milestones** — issues that are:
-
+**Issue fitness criteria** (for adding from backlog):
+- Complements or extends the milestone's theme
 - Small or medium effort
 - Not blocked by unresolved discussions
-- Complement or extend recently shipped features
-- Fill gaps in milestones that are under budget
+- Dependencies resolved in same or earlier milestone
+- Epic tracker (parent): place in same milestone as its first child
+- Sibling dependencies: if child A blocks child B, A must be in same or earlier milestone than B
 
-Present candidates with recommended milestone placement. Leave remaining unassigned issues in backlog with a brief categorization summary.
+### Step 5: Confirm and execute
 
-### Step 5: Propose rebalancing
-
-Present a report covering all milestones:
-
-**Overview:**
-
-| Milestone | Issues | Est. Effort | Budget | Status |
-|-----------|--------|-------------|--------|--------|
-| v0.X.0 | N open | X days | 3.5–4 days | over/under/ok |
-
-**Per-milestone detail:**
-
-For each milestone, list:
-
-| # | Title | Size | Labels | Dependencies |
-|---|-------|------|--------|-------------|
-| ... | ... | S/M/L | ... | blocks #N, blocked by #N, child of #N |
-
-**Proposed changes:**
-
-1. **Keep** — issues that fit their milestone's budget
-2. **Move** — issues to move between milestones, with reason
-3. **Close** — issues already done or obsolete
-4. **Flag** — cross-milestone dependency problems (e.g. blocker in a later milestone than the issue it blocks)
-
-**Release value check:**
-
-After effort-based rebalancing, review each milestone's release value. Every release should have a clear theme and at least one user-visible feature. Flag milestones that contain only:
-
-- Tech debt (dependency upgrades, refactoring)
-- Testing (BDD, unit tests)
-- Internal tooling with no user-facing change
-
-When a milestone lacks user value, mix in a feature issue from an adjacent milestone. Prefer pairing related items (e.g. a dependency upgrade + a feature that benefits from it) over arbitrary mixing.
-
-Present a value summary table:
-
-| Milestone | Theme | User-Visible Value |
-|-----------|-------|--------------------|
-| v0.X.0 | ... | what users get in this release |
-
-**Rebalancing rules:**
-
-- Every milestone must ship at least one user-visible improvement
-- Prefer keeping small, independent issues (quick wins)
-- Move large epics with all their children together
-- Keep blockers in earlier milestones than the issues they block
-- `discussion` issues go to later milestones unless design is already done
-- Don't split an epic across milestones (parent and children stay together)
-- When mixing in features to add value, prefer natural pairings (e.g. upgrade + enhancement that depends on it)
-
-### Step 6: Confirm and execute
-
-Use AskUserQuestion to confirm the plan. Options:
-
-- **"Looks good, execute"** — proceed
-- **"I want to adjust"** — iterate
-
-Once confirmed, execute all changes across milestones:
+Confirm each milestone's issue list with the user before executing moves. Work one milestone at a time — confirm theme and issues together, then execute immediately before moving to the next.
 
 ```bash
 # Move issues between milestones
@@ -174,7 +130,7 @@ gh issue close <number> --comment "<reason>"
 gh api repos/typemd/typemd/milestones -f title="v<VERSION>" -f description="<description>"
 ```
 
-### Step 7: Report
+### Step 6: Report
 
 Present final state of all affected milestones:
 

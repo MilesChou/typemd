@@ -93,8 +93,8 @@ Proactively analyze existing issues to suggest relationships. Do NOT simply ask 
 
 Fetch open issues with `gh issue list --state open --json number,title,labels,issueType --limit 100`, then compare the new issue against them. Look for:
 
-- **Potential parent (epic)**: Is there an open Epic that this issue logically belongs under? Match by topic, component, or feature area.
-- **Potential blockers**: Are there open issues that must be resolved before this one can start? Look for prerequisite features, infrastructure work, or dependencies.
+- **Potential parent (epic)**: Is there an open Epic that this issue logically belongs under? Match by topic, component, or feature area. Note: a parent epic is an **organizational tracker only** — it does not block its children. Children of the same epic may span multiple milestones.
+- **Potential blockers**: Are there open issues that must be resolved before this one can start? For issues under the same epic, look for **sibling dependencies** (e.g. "implement X" blocks "build Y on top of X"). Blocker relationships are between siblings, not between parent and child.
 - **Related issues**: Issues in the same area that aren't parent/blocker but worth cross-referencing.
 
 Present your findings to the user via AskUserQuestion. Format:
