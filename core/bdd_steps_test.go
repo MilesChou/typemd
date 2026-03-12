@@ -1549,28 +1549,11 @@ func (dc *domainContext) theObjectTimestampShouldBeRecent(propName string) error
 }
 
 func (dc *domainContext) theFrontmatterShouldHaveSystemPropertiesBeforeSchemaProperties() error {
-	data, err := os.ReadFile(dc.vault.ObjectPath(dc.currentObject.Type, dc.currentObject.Filename))
-	if err != nil {
-		return fmt.Errorf("ReadFile error: %v", err)
-	}
-	content := string(data)
-	nameIdx := strings.Index(content, "name:")
-	createdIdx := strings.Index(content, "created_at:")
-	updatedIdx := strings.Index(content, "updated_at:")
-	titleIdx := strings.Index(content, "title:")
-
-	if nameIdx == -1 || createdIdx == -1 || updatedIdx == -1 {
-		return fmt.Errorf("missing system properties in frontmatter:\n%s", content)
-	}
-
-	if nameIdx > createdIdx {
-		return fmt.Errorf("name should come before created_at")
-	}
-	if createdIdx > updatedIdx {
-		return fmt.Errorf("created_at should come before updated_at")
-	}
-	if titleIdx != -1 && updatedIdx > titleIdx {
-		return fmt.Errorf("updated_at should come before title")
+	pairs := [][2]string{{"name", "created_at"}, {"created_at", "updated_at"}, {"updated_at", "title"}}
+	for _, p := range pairs {
+		if err := dc.theFrontmatterShouldHaveBefore(p[0], p[1]); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -1591,13 +1574,12 @@ func (dc *domainContext) theIndexedPropertiesForTheObjectShouldContain(propName 
 	return nil
 }
 
-func (dc *domainContext) aRawObjectFileWithoutTimestampsExists() {
+func (dc *domainContext) createRawObjectFile(prefix, frontmatter string) {
 	typeName := "book"
-	filename := "legacy-book-" + mustULID()
+	filename := prefix + mustULID()
 	objPath := dc.vault.ObjectPath(typeName, filename)
 	os.MkdirAll(filepath.Dir(objPath), 0755)
-	content := "---\nname: legacy-book\ntitle: Legacy\n---\n"
-	os.WriteFile(objPath, []byte(content), 0644)
+	os.WriteFile(objPath, []byte("---\n"+frontmatter+"---\n"), 0644)
 	dc.currentObject = &Object{
 		ID:       typeName + "/" + filename,
 		Type:     typeName,
@@ -1605,14 +1587,64 @@ func (dc *domainContext) aRawObjectFileWithoutTimestampsExists() {
 	}
 }
 
-func (dc *domainContext) theRawObjectFileShouldNotHaveTimestampsAdded() error {
+func (dc *domainContext) aRawObjectFileWithoutTimestampsExists() {
+	dc.createRawObjectFile("legacy-book-", "name: legacy-book\ntitle: Legacy\n")
+}
+
+func (dc *domainContext) rawObjectFileShouldNotContain(propName string) error {
 	data, err := os.ReadFile(dc.vault.ObjectPath(dc.currentObject.Type, dc.currentObject.Filename))
 	if err != nil {
 		return fmt.Errorf("ReadFile error: %v", err)
 	}
 	content := string(data)
-	if strings.Contains(content, "created_at:") || strings.Contains(content, "updated_at:") {
-		return fmt.Errorf("timestamps were added to existing object:\n%s", content)
+	if strings.Contains(content, propName+":") {
+		return fmt.Errorf("%s was added to existing object:\n%s", propName, content)
+	}
+	return nil
+}
+
+func (dc *domainContext) theRawObjectFileShouldNotHaveTimestampsAdded() error {
+	if err := dc.rawObjectFileShouldNotContain("created_at"); err != nil {
+		return err
+	}
+	return dc.rawObjectFileShouldNotContain("updated_at")
+}
+
+func (dc *domainContext) theObjectShouldNotHaveProperty(propName string) error {
+	got, err := dc.vault.GetObject(dc.currentObject.ID)
+	if err != nil {
+		return fmt.Errorf("GetObject error: %v", err)
+	}
+	if _, ok := got.Properties[propName]; ok {
+		return fmt.Errorf("expected object to not have property %q, but it does", propName)
+	}
+	return nil
+}
+
+func (dc *domainContext) aRawObjectFileWithDescriptionExists() {
+	dc.createRawObjectFile("desc-raw-book-", "name: desc-raw-book\ndescription: A raw book with description\ntitle: Raw Book\n")
+}
+
+func (dc *domainContext) theRawObjectFileShouldNotHaveDescriptionAdded() error {
+	return dc.rawObjectFileShouldNotContain("description")
+}
+
+func (dc *domainContext) theFrontmatterShouldHaveBefore(first, second string) error {
+	data, err := os.ReadFile(dc.vault.ObjectPath(dc.currentObject.Type, dc.currentObject.Filename))
+	if err != nil {
+		return fmt.Errorf("ReadFile error: %v", err)
+	}
+	content := string(data)
+	firstIdx := strings.Index(content, first+":")
+	secondIdx := strings.Index(content, second+":")
+	if firstIdx == -1 {
+		return fmt.Errorf("%q not found in frontmatter:\n%s", first, content)
+	}
+	if secondIdx == -1 {
+		return fmt.Errorf("%q not found in frontmatter:\n%s", second, content)
+	}
+	if firstIdx > secondIdx {
+		return fmt.Errorf("%q should come before %q in frontmatter", first, second)
 	}
 	return nil
 }
@@ -1802,6 +1834,10 @@ func initDomainSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the indexed properties for the object should contain "([^"]*)"$`, dc.theIndexedPropertiesForTheObjectShouldContain)
 	ctx.Step(`^a raw object file without timestamps exists$`, dc.aRawObjectFileWithoutTimestampsExists)
 	ctx.Step(`^the raw object file should not have timestamps added$`, dc.theRawObjectFileShouldNotHaveTimestampsAdded)
+	ctx.Step(`^the object should not have property "([^"]*)"$`, dc.theObjectShouldNotHaveProperty)
+	ctx.Step(`^a raw object file with description exists$`, dc.aRawObjectFileWithDescriptionExists)
+	ctx.Step(`^the raw object file should not have description added$`, dc.theRawObjectFileShouldNotHaveDescriptionAdded)
+	ctx.Step(`^the frontmatter should have "([^"]*)" before "([^"]*)"$`, dc.theFrontmatterShouldHaveBefore)
 
 	// Common steps
 	ctx.Step(`^an error should occur$`, dc.anErrorShouldOccur)
