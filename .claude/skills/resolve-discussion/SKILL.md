@@ -15,7 +15,7 @@ Discussion issues don't produce code — they produce **decisions**. The goal is
 
 ## Prerequisites
 
-This skill expects the issue has already been read and confirmed with the user (via resolve-issue Preflight or direct invocation). If invoked directly, read the issue first:
+Always read the issue first to ensure context is available, regardless of how this skill was invoked:
 
 ```bash
 gh issue view <number> --json title,body,labels,milestone,assignees
