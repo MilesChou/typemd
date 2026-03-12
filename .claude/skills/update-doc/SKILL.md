@@ -44,6 +44,7 @@ Collect every place that documents behavior:
 - `docs/` site content (Starlight, Docusaurus, etc.)
 - Inline help strings in CLI code (Cobra `Short`/`Long`/`Use` fields)
 - Man pages, changelog, or other generated docs
+- `marketplace/` — marketplace README, CONTRIBUTING, plugin READMEs, and SKILL.md content
 
 Also collect formal specifications as a source of truth:
 
@@ -61,6 +62,7 @@ Use an Explore agent for thorough comparison. Check these areas:
 | **API / MCP tools** | Tool names, parameters, return fields match |
 | **Architecture** | Directory listing matches actual directories; planned vs existing |
 | **Config / init** | Documented behavior matches edge cases (already-init, errors) |
+| **Marketplace** | Plugin READMEs and SKILL.md instructions reflect current typemd data model, CLI commands, and type schema format; CONTRIBUTING.md plugin structure matches Claude Code plugin format |
 | **Specs → Docs** | Every requirement in `openspec/specs/*/spec.md` has corresponding documentation; scenario descriptions match doc descriptions |
 | **Specs → Code** | Every requirement in specs is actually implemented; code behavior matches scenario expectations |
 
