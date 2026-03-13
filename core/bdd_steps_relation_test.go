@@ -111,14 +111,22 @@ func (dc *domainContext) thePropertyOfShouldBeEmpty(prop, ownerName string) erro
 	return nil
 }
 
-func (dc *domainContext) iUnlinkFromViaWithBothFlag(sourceName, targetName, relation string) {
+func (dc *domainContext) unlinkObjects(sourceName, targetName, relation string, both bool) {
 	source := dc.objects[sourceName]
 	target := dc.objects[targetName]
 	if source == nil || target == nil {
 		dc.lastErr = fmt.Errorf("object %q or %q not found", sourceName, targetName)
 		return
 	}
-	dc.lastErr = dc.vault.UnlinkObjects(source.ID, relation, target.ID, true)
+	dc.lastErr = dc.vault.UnlinkObjects(source.ID, relation, target.ID, both)
+}
+
+func (dc *domainContext) iUnlinkFromViaWithBothFlag(sourceName, targetName, relation string) {
+	dc.unlinkObjects(sourceName, targetName, relation, true)
+}
+
+func (dc *domainContext) iUnlinkFromViaWithoutBothFlag(sourceName, targetName, relation string) {
+	dc.unlinkObjects(sourceName, targetName, relation, false)
 }
 
 func (dc *domainContext) listingRelationsForShouldReturnNEntries(name string, expected int) error {
@@ -144,5 +152,6 @@ func initRelationSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should contain "([^"]*)"$`, dc.thePropertyOfShouldContain)
 	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should be empty$`, dc.thePropertyOfShouldBeEmpty)
 	ctx.Step(`^I unlink "([^"]*)" from "([^"]*)" via "([^"]*)" with both flag$`, dc.iUnlinkFromViaWithBothFlag)
+	ctx.Step(`^I unlink "([^"]*)" from "([^"]*)" via "([^"]*)" without both flag$`, dc.iUnlinkFromViaWithoutBothFlag)
 	ctx.Step(`^listing relations for "([^"]*)" should return (\d+) entries$`, dc.listingRelationsForShouldReturnNEntries)
 }

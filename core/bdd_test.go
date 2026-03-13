@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -114,8 +115,36 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the parsed property "([^"]*)" should be "([^"]*)"$`, fc.theParsedPropertyShouldBe)
 	ctx.Step(`^the parsed body should be "([^"]*)"$`, fc.theParsedBodyShouldBe)
 
-	// Domain steps (vault, object, relation, query, validate, wikilink)
-	initDomainSteps(ctx)
+	// Domain steps
+	dc := newDomainContext()
+
+	// Cleanup after each scenario
+	ctx.After(func(hookCtx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+		if dc.vault != nil {
+			dc.vault.Close()
+		}
+		if dc.rootDir != "" {
+			os.RemoveAll(dc.rootDir)
+		}
+		return hookCtx, nil
+	})
+
+	initCommonSteps(ctx, dc)
+	initVaultSteps(ctx, dc)
+	initObjectSteps(ctx, dc)
+	initRelationSteps(ctx, dc)
+	initQuerySteps(ctx, dc)
+	initValidateSteps(ctx, dc)
+	initWikiLinkSteps(ctx, dc)
+	initResolveSteps(ctx, dc)
+	initPropertyTypeSteps(ctx, dc)
+	initPropertyEmojiSteps(ctx, dc)
+	initPinnedSteps(ctx, dc)
+	initFilteringSteps(ctx, dc)
+	initNameSteps(ctx, dc)
+	initSharedSteps(ctx, dc)
+	initSystemSteps(ctx, dc)
+	initTagSteps(ctx, dc)
 }
 
 func TestFeatures(t *testing.T) {

@@ -30,7 +30,7 @@ properties:
     options:
       - value: draft
       - value: published
-  - name: tags
+  - name: labels
     type: multi_select
     options:
       - value: go
