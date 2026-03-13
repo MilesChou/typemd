@@ -50,8 +50,8 @@ type domainContext struct {
 	// system property tracking
 	createdAtSnapshot string // snapshot of created_at after object creation
 
-	// tag uniqueness validation results
-	tagUniquenessErrors []error
+	// name uniqueness validation results
+	nameUniquenessErrors []error
 }
 
 func newDomainContext() *domainContext {
