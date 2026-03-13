@@ -65,10 +65,11 @@ func OrderedPropKeys(props map[string]any, schema *TypeSchema) []string {
 
 // TypeSchema defines the schema for a type.
 type TypeSchema struct {
-	Name       string     `yaml:"name"`
-	Plural     string     `yaml:"plural,omitempty"`
-	Emoji      string     `yaml:"emoji,omitempty"`
-	Properties []Property `yaml:"properties"`
+	Name         string     `yaml:"name"`
+	Plural       string     `yaml:"plural,omitempty"`
+	Emoji        string     `yaml:"emoji,omitempty"`
+	Properties   []Property `yaml:"properties"`
+	NameTemplate string     `yaml:"-"` // extracted from name property entry during load
 }
 
 // PluralName returns the plural form if set, otherwise falls back to Name.
@@ -98,6 +99,7 @@ type Property struct {
 	Multiple      bool     `yaml:"multiple,omitempty"`
 	Bidirectional bool     `yaml:"bidirectional,omitempty"`
 	Inverse       string   `yaml:"inverse,omitempty"`
+	Template      string   `yaml:"template,omitempty"`
 }
 
 // SharedPropertiesFile represents the .typemd/properties.yaml file.
@@ -143,6 +145,17 @@ func (v *Vault) LoadType(name string) (*TypeSchema, error) {
 		if err := yaml.Unmarshal(data, &schema); err != nil {
 			return nil, fmt.Errorf("parse type schema %s: %w", name, err)
 		}
+
+		// Extract name template from properties if present
+		filtered := schema.Properties[:0]
+		for _, prop := range schema.Properties {
+			if prop.Name == NameProperty {
+				schema.NameTemplate = prop.Template
+				continue
+			}
+			filtered = append(filtered, prop)
+		}
+		schema.Properties = filtered
 
 		// Resolve use entries if any exist
 		if err := v.resolveSchemaUseEntries(&schema); err != nil {
@@ -302,6 +315,17 @@ func ValidateSchema(schema *TypeSchema, sharedProps ...[]Property) []error {
 			errs = append(errs, fmt.Errorf("property[%d]: missing required field: name", i))
 			continue
 		}
+		if prop.Name == NameProperty {
+			// Allow name entry with only template set
+			onlyTemplate := prop.Template != "" &&
+				prop.Type == "" && prop.Emoji == "" && prop.Pin == 0 &&
+				len(prop.Options) == 0 && prop.Target == "" && prop.Default == nil &&
+				!prop.Multiple && !prop.Bidirectional && prop.Inverse == ""
+			if !onlyTemplate {
+				errs = append(errs, fmt.Errorf("property %q: only \"template\" is allowed on the name system property entry", prop.Name))
+			}
+			continue
+		}
 		if IsSystemProperty(prop.Name) {
 			errs = append(errs, fmt.Errorf("property %q: %q is a reserved system property and cannot be defined in type schemas", prop.Name, prop.Name))
 			continue
@@ -353,6 +377,7 @@ func validateUseOverrides(index int, prop Property) error {
 		{"multiple", prop.Multiple},
 		{"bidirectional", prop.Bidirectional},
 		{"inverse", prop.Inverse != ""},
+		{"template", prop.Template != ""},
 	}
 
 	for _, f := range disallowed {
