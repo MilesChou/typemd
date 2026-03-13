@@ -2,7 +2,7 @@
 name: resolve-issue
 description: This skill should be used when the user asks to "resolve an issue", "work on issue #N", "fix #N", "implement #N", "close #N", "tackle #N", "pick up #N", "start working on #N", "what should I work on next", or references a specific GitHub issue number they want to work on. Can also auto-select the best issue when no number is specified.
 allowed-tools:
-  - Bash(gh api repos/typemd/typemd/milestones:*)
+  - Bash(gh api graphql:*)
   - Bash(gh issue list:*)
   - Bash(gh issue view:*)
   - Bash(openspec:*)
@@ -49,19 +49,23 @@ Preflight covers all lightweight preparation steps before the main phases begin.
 
 If the user does not specify an issue number, automatically select the best issue to work on.
 
-**Step 1: Find the nearest milestone**
+**Step 1: Find the nearest open Release issue**
 
 ```bash
-gh api repos/typemd/typemd/milestones --jq 'sort_by(.due_on // "9999") | .[0] | {title, number, due_on}'
+gh api graphql -f query='query {
+  repository(owner:"typemd", name:"typemd") {
+    issues(first: 1, states: OPEN, filterBy: {issueType: "Release"}, orderBy: {field: CREATED_AT, direction: ASC}) {
+      nodes { number title subIssues(first: 30) { nodes { number title state labels(first: 5) { nodes { name } } } } }
+    }
+  }
+}'
 ```
 
-If no milestone exists, fall back to all open issues.
+If no open Release issue exists, fall back to all open issues.
 
-**Step 2: List open issues in that milestone**
+**Step 2: List open sub-issues in that Release**
 
-```bash
-gh issue list --milestone "<milestone_title>" --state open --json number,title,labels,assignees,body --limit 50
-```
+Extract the open sub-issues from the Release issue's `subIssues` response above.
 
 **Step 3: Rank issues by priority**
 
@@ -72,13 +76,13 @@ Evaluate each issue using these criteria (highest priority first):
 3. **Low effort, high impact** — small scope issues that unblock progress (labeled `good first issue`, `quick win`, or estimated as small)
 4. **Dependencies resolved** — issues whose blockers are already closed
 
-**All issue types are valid candidates**, including `discussion` issues. If an issue is assigned to a milestone, it needs to be resolved in that timeframe regardless of its label.
+**All issue types are valid candidates**, including `discussion` issues. If an issue belongs to a Release, it needs to be resolved in that timeframe regardless of its label.
 
 **Step 4: Present top 3 candidates**
 
 Ask the user via AskUserQuestion with the top 3 recommended issues:
 
-- **"#N: \<title\>"** — for each candidate, include a one-line reason why it's recommended (e.g., "Blocks 3 other issues", "Critical bug", "Quick win for milestone X")
+- **"#N: \<title\>"** — for each candidate, include a one-line reason why it's recommended (e.g., "Blocks 3 other issues", "Critical bug", "Quick win for release X")
 
 The user selects one, then proceed to **Check Issue State** with that issue number.
 
@@ -98,7 +102,7 @@ gh issue view <number> --json state,closedByPullRequestsReferences
 Read the issue and confirm understanding with the user.
 
 ```bash
-gh issue view <number> --json title,body,labels,milestone,assignees
+gh issue view <number> --json title,body,labels,assignees
 ```
 
 Present a summary:
@@ -106,7 +110,7 @@ Present a summary:
 - **Title**
 - **Type** (Bug / Feature / Task / Epic)
 - **Labels**
-- **Milestone**
+- **Release** (which Release issue it belongs to, if any)
 - **Key requirements** extracted from the body
 
 Ask the user via AskUserQuestion:

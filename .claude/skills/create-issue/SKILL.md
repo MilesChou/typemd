@@ -79,13 +79,23 @@ After setting the issue type, assign **one or more component labels**. Optionall
 
 Suggest labels based on context. Ask for confirmation if ambiguous.
 
-### Step 5: Assign milestone
+### Step 5: Assign to Release
 
-Open milestones:
+Fetch open Release issues:
 
-!`gh api repos/typemd/typemd/milestones --jq '.[] | "\(.number) \(.title)"'`
+```bash
+gh api graphql -f query='query {
+  repository(owner:"typemd", name:"typemd") {
+    issues(first: 10, states: OPEN, filterBy: {issueType: "Release"}, orderBy: {field: CREATED_AT, direction: ASC}) {
+      nodes { number title }
+    }
+  }
+}'
+```
 
-Present the milestones above as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any milestone.
+Present the Release issues as options using AskUserQuestion. Always include a "None" option for issues that don't belong to any release.
+
+**Note:** The issue will be linked as a sub-issue of the selected Release issue in Step 8. However, if the issue already has a parent (e.g. an Epic), GitHub only allows one parent — in that case, reference it in the Release issue body instead.
 
 ### Step 6: Relationships (optional)
 
@@ -93,7 +103,7 @@ Proactively analyze existing issues to suggest relationships. Do NOT simply ask 
 
 Fetch open issues with `gh issue list --state open --json number,title,labels,issueType --limit 100`, then compare the new issue against them. Look for:
 
-- **Potential parent (epic)**: Is there an open Epic that this issue logically belongs under? Match by topic, component, or feature area. Note: a parent epic is an **organizational tracker only** — it does not block its children. Children of the same epic may span multiple milestones.
+- **Potential parent (epic)**: Is there an open Epic that this issue logically belongs under? Match by topic, component, or feature area. Note: a parent epic is an **organizational tracker only** — it does not block its children. Children of the same epic may span multiple releases.
 - **Potential blockers**: Are there open issues that must be resolved before this one can start? For issues under the same epic, look for **sibling dependencies** (e.g. "implement X" blocks "build Y on top of X"). Blocker relationships are between siblings, not between parent and child.
 - **Related issues**: Issues in the same area that aren't parent/blocker but worth cross-referencing.
 
@@ -123,7 +133,7 @@ Present the full issue draft to the user, then use AskUserQuestion to confirm:
 - **Title** — concise, plain language, no prefix
 - **Type** — issue type name
 - **Labels** — component + optional extra labels
-- **Milestone** — selected milestone or none
+- **Release** — selected Release issue or none
 - **Relationships** — parent issue or blocking issues, if any
 - **Body** — using the body template matching the issue type (see below)
 
@@ -136,9 +146,8 @@ Use GraphQL to create the issue with the issue type set.
 **IMPORTANT — use JSON file + `--input`**: The `gh api graphql -f` flag cannot pass array variables (like `labelIds`) correctly — it treats the JSON array as a single string, causing `NOT_FOUND` errors. Shell escaping of `!` in GraphQL types (e.g. `ID!`) also causes issues. Always write a JSON file with heredoc and pass it via `--input`.
 
 ```bash
-# Get repo and milestone IDs
+# Get repo ID
 REPO_ID=$(gh api repos/typemd/typemd --jq '.node_id')
-MILESTONE_ID=$(gh api repos/typemd/typemd/milestones/<number> --jq '.node_id')
 
 # Get label IDs (one per label)
 LABEL_ID_1=$(gh api repos/typemd/typemd/labels/<name1> --jq '.node_id')
@@ -147,13 +156,12 @@ LABEL_ID_2=$(gh api repos/typemd/typemd/labels/<name2> --jq '.node_id')
 # Write GraphQL request as JSON file using heredoc (avoids shell escaping issues with `!`)
 cat > /tmp/create_issue.json << 'EOF'
 {
-  "query": "mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $milestoneId: ID, $labelIds: [ID!], $parentId: ID) { createIssue(input: { repositoryId: $repoId, title: $title, body: $body, issueTypeId: $typeId, milestoneId: $milestoneId, labelIds: $labelIds, parentIssueId: $parentId }) { issue { number url } } }",
+  "query": "mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $labelIds: [ID!], $parentId: ID) { createIssue(input: { repositoryId: $repoId, title: $title, body: $body, issueTypeId: $typeId, labelIds: $labelIds, parentIssueId: $parentId }) { issue { number url } } }",
   "variables": {
     "repoId": "<REPO_ID>",
     "title": "<title>",
     "body": "<body with \\n for newlines>",
     "typeId": "<issue_type_id>",
-    "milestoneId": "<MILESTONE_ID or null>",
     "labelIds": ["<LABEL_ID_1>", "<LABEL_ID_2>"],
     "parentId": null
   }
@@ -163,7 +171,17 @@ EOF
 gh api graphql --input /tmp/create_issue.json
 ```
 
-Omit or set to `null` the `milestoneId`, `labelIds`, or `parentId` fields if not applicable. Clean up the temp file after use with `rm -f /tmp/create_issue.json`.
+Omit or set to `null` the `labelIds` or `parentId` fields if not applicable. Clean up the temp file after use with `rm -f /tmp/create_issue.json`.
+
+**After creation**, if a Release issue was selected and the new issue has no other parent, add it as a sub-issue:
+
+```bash
+RELEASE_ID=$(gh issue view <release_number> --json id --jq '.id')
+ISSUE_ID=$(gh issue view <new_number> --json id --jq '.id')
+gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$RELEASE_ID\", subIssueId: \"$ISSUE_ID\" }) { subIssue { number } } }"
+```
+
+If the issue already has a parent (e.g. an Epic), skip the sub-issue link and instead edit the Release issue body to reference it.
 
 **After creation**, if there are blocking relationships, add them (one per blocking issue):
 

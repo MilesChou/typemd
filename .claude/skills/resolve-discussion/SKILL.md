@@ -18,7 +18,7 @@ Discussion issues don't produce code — they produce **decisions**. The goal is
 Always read the issue first to ensure context is available, regardless of how this skill was invoked:
 
 ```bash
-gh issue view <number> --json title,body,labels,milestone,assignees
+gh issue view <number> --json title,body,labels,assignees
 ```
 
 ## Phase 1: Brainstorm

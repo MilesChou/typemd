@@ -31,8 +31,20 @@ The user must provide a version number (e.g. `v0.2.0`). If not provided, ask bef
 # Get the previous release tag (for commit range)
 PREV_TAG=$(git tag --sort=-version:refname | head -2 | tail -1)
 
-# Closed issues in the milestone
-gh issue list --milestone "v<VERSION>" --state closed --json number,title,labels --limit 50
+# Closed issues in the Release issue (find by title matching version)
+gh api graphql -f query='query {
+  repository(owner:"typemd", name:"typemd") {
+    issues(first: 10, states: [OPEN, CLOSED], filterBy: {issueType: "Release"}, orderBy: {field: CREATED_AT, direction: DESC}) {
+      nodes {
+        number title state
+        subIssues(first: 30) {
+          nodes { number title state labels(first: 5) { nodes { name } } }
+        }
+      }
+    }
+  }
+}'
+# Filter for the Release issue matching v<VERSION> and extract its closed sub-issues
 
 # Commits since last tag — exclude chore, skill, and docs-only commits
 git log ${PREV_TAG}..HEAD --oneline --no-merges
@@ -45,7 +57,7 @@ git log ${PREV_TAG}..HEAD --oneline --no-merges
 
 Include: `feat`, `fix`, `refactor` (if user-visible), `perf`
 
-If the milestone has open issues, warn the user before proceeding.
+If the Release issue has open sub-issues, warn the user before proceeding.
 
 ---
 

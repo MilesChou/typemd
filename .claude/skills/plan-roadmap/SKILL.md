@@ -1,68 +1,71 @@
 ---
 name: plan-roadmap
-description: Use when the user asks to "plan a roadmap", "review milestone scope", "rebalance milestones", "check if milestone is too large", or wants to adjust issue distribution across versions to fit a one-week release cadence.
+description: Use when the user asks to "plan a roadmap", "review release scope", "rebalance releases", "check if release is too large", or wants to adjust issue distribution across versions to fit a one-week release cadence.
 ---
 
 # Plan Roadmap
 
-Review all milestones' scope, analyze issue relationships, and rebalance to fit a one-week release cadence.
+Review all Release issues' scope, analyze issue relationships, and rebalance to fit a one-week release cadence.
+
+Version planning is managed through **Release issues** (GitHub issues with the `Release` type). Each Release issue serves as a version container, with child issues linked via GitHub's sub-issue relationship. Milestones are no longer used for new versions.
 
 ## Language
 
-All issue comments and milestone descriptions MUST be written in **English**.
+All issue comments and Release issue content MUST be written in **English**.
 
 ## Principles
 
 - One minor version = one week of work
-- Every release must deliver visible user value — avoid pure tech-debt or pure testing milestones
-- Parent issues are epic trackers (organizational only) — place them in the same milestone as their first child
-- Children of an epic may span multiple milestones; dependency order is between siblings, not parent → child
+- Every release must deliver visible user value — avoid pure tech-debt or pure testing releases
+- Epic issues are organizational trackers — place them in the same release as their first child
+- Children of an epic may span multiple releases; dependency order is between siblings, not parent → child
 - Blocked issues cannot ship before their blockers (check `blockedBy` between sibling issues)
 - Discussion-tagged issues need design first — don't schedule for immediate delivery
 - Themes drive issue selection — not just effort balancing
-- When a milestone is under budget, prefer non-business tasks (testing, infra, docs) over adding more features
+- When a release is under budget, prefer non-business tasks (testing, infra, docs) over adding more features
 
 ## Process
 
 ### Step 1: Gather
 
-Fetch all milestones, their issues, and unassigned issues. Use GraphQL for milestone issue lists — it returns authoritative milestone assignments unlike `gh issue list --milestone` which can be unreliable:
+Fetch all Release issues and their sub-issues, plus unassigned issues:
 
 ```bash
-# All milestones
-gh api repos/typemd/typemd/milestones --jq '.[] | {title, number, open_issues, closed_issues}'
-
-# Open issues for each milestone via GraphQL (run all in parallel)
+# All Release issues (open and closed)
 gh api graphql -f query='query {
   repository(owner:"typemd", name:"typemd") {
-    milestone(number: <N>) {
-      title
-      issues(first: 30, states: OPEN) {
-        nodes { number title labels(first: 5) { nodes { name } }
-          parent { number title state milestone { title } }
+    issues(first: 20, states: [OPEN, CLOSED], filterBy: {issueType: "Release"}, orderBy: {field: CREATED_AT, direction: ASC}) {
+      nodes {
+        number title state
+        subIssues(first: 30) {
+          nodes { number title state labels(first: 5) { nodes { name } }
+            parent { number title state }
+          }
         }
       }
     }
   }
 }'
 
-# Open issues without a milestone
-gh issue list --search "no:milestone is:open" --json number,title,labels --limit 100
+# All open issues (to find unassigned ones)
+gh issue list --state open --json number,title,labels --limit 100
 ```
+
+Filter out issues that are already sub-issues of a Release to identify unassigned issues.
 
 ### Step 2: Analyze relationships
 
-For all milestone issues, query parent, sub-issues, and blocking relationships in parallel:
+For all release sub-issues, query parent, sub-issues, and blocking relationships in parallel:
 
 ```bash
 gh api graphql -f query='query {
   repository(owner:"typemd", name:"typemd") {
     issue(number: <N>) {
       number title state
-      parent { number title state milestone { title } }
-      subIssues(first: 20) { nodes { number title state milestone { title } } }
-      blockedBy(first: 10) { nodes { number title state milestone { title } } }
-      blocking(first: 10) { nodes { number title state milestone { title } } }
+      parent { number title state }
+      subIssues(first: 20) { nodes { number title state } }
+      blockedBy(first: 10) { nodes { number title state } }
+      blocking(first: 10) { nodes { number title state } }
     }
   }
 }'
@@ -71,12 +74,12 @@ gh api graphql -f query='query {
 Build a dependency map:
 
 - **Epic groups** — parent + children should move together
-- **Block chains** — if A blocks B, A must ship first (same or earlier milestone)
-- **Cross-milestone blockers** — flag as problems
+- **Block chains** — if A blocks B, A must ship first (same or earlier release)
+- **Cross-release blockers** — flag as problems
 
 ### Step 3: Define themes for the next 5 releases
 
-Look at the next 5 upcoming milestones. For each one, propose a **release theme** — a short, user-facing headline that:
+Look at the next 5 open Release issues. For each one, propose a **release theme** — a short, user-facing headline that:
 
 - Describes the user-visible value in a concrete, exciting way (e.g. "Type System is Here", "Built-in Types", "TUI Editing")
 - Follows naturally from the previous release
@@ -84,18 +87,18 @@ Look at the next 5 upcoming milestones. For each one, propose a **release theme*
 
 **Headline style:** Think product update cards like Capacities — feature-forward, verb-driven, not abstract. "Navigation & Discovery" beats "Usability Improvements". Present all 5 themes together and discuss with the user before proceeding. Adjust based on feedback.
 
-**If a milestone has 0 open issues**, flag it as ready to release — don't force issues into it.
+**If a Release issue has 0 open sub-issues**, flag it as ready to release — don't force issues into it.
 
-### Step 4: Populate each themed milestone
+### Step 4: Populate each themed release
 
-Work through each milestone **one at a time** with the user:
+Work through each release **one at a time** with the user:
 
-1. **Start from existing issues** already assigned to that milestone
+1. **Start from existing sub-issues** already linked to that Release issue
 2. **Scan all unassigned issues** for relevance to the theme — propose good candidates
-3. **Move out** issues that don't fit the theme (to a later milestone or backlog)
+3. **Move out** issues that don't fit the theme (to a later release or unlink)
 4. **Check effort budget** — target 70–80% of weekly capacity (3.5–4 days)
 
-**When under budget:** Look for non-business tasks first — testing, infra, documentation — before adding more features. These are good fillers that don't dilute the milestone's theme.
+**When under budget:** Look for non-business tasks first — testing, infra, documentation — before adding more features. These are good fillers that don't dilute the release's theme.
 
 **Effort sizing:**
 
@@ -108,32 +111,50 @@ Work through each milestone **one at a time** with the user:
 Heuristics: `discussion` label → add 1 day; new command → medium; epic tracker → sum children.
 
 **Issue fitness criteria** (for adding from backlog):
-- Complements or extends the milestone's theme
+- Complements or extends the release's theme
 - Small or medium effort
 - Not blocked by unresolved discussions
-- Dependencies resolved in same or earlier milestone
-- Epic tracker (parent): place in same milestone as its first child
-- Sibling dependencies: if child A blocks child B, A must be in same or earlier milestone than B
+- Dependencies resolved in same or earlier release
+- Epic tracker (parent): place in same release as its first child
+- Sibling dependencies: if child A blocks child B, A must be in same or earlier release than B
 
 ### Step 5: Confirm and execute
 
-Confirm each milestone's issue list with the user before executing moves. Work one milestone at a time — confirm theme and issues together, then execute immediately before moving to the next.
+Confirm each release's issue list with the user before executing moves. Work one release at a time — confirm theme and issues together, then execute immediately before moving to the next.
 
 ```bash
-# Move issues between milestones
-gh issue edit <number> --milestone "v<TARGET>"
+# Add a sub-issue to a Release issue
+PARENT_ID=$(gh issue view <release_number> --json id --jq '.id')
+CHILD_ID=$(gh issue view <number> --json id --jq '.id')
+gh api graphql -f query="mutation { addSubIssue(input: { issueId: \"$PARENT_ID\", subIssueId: \"$CHILD_ID\" }) { subIssue { number } } }"
+
+# Remove a sub-issue from a Release issue
+gh api graphql -f query="mutation { removeSubIssue(input: { issueId: \"$PARENT_ID\", subIssueId: \"$CHILD_ID\" }) { subIssue { number } } }"
 
 # Close obsolete issues
 gh issue close <number> --comment "<reason>"
 
-# Create new milestone if needed
-gh api repos/typemd/typemd/milestones -f title="v<VERSION>" -f description="<description>"
+# Create new Release issue if needed (use create-milestone skill)
 ```
+
+**Note:** GitHub sub-issues only allow one parent per issue. If an issue already has a parent (e.g. an Epic), it cannot be added as a sub-issue of the Release. In that case, reference it in the Release issue body instead.
 
 ### Step 6: Report
 
-Present final state of all affected milestones:
+Present final state of all affected Release issues:
 
 ```bash
-gh api repos/typemd/typemd/milestones --jq '.[] | "\(.title): \(.open_issues) open, \(.closed_issues) closed"'
+gh api graphql -f query='query {
+  repository(owner:"typemd", name:"typemd") {
+    issues(first: 20, states: OPEN, filterBy: {issueType: "Release"}, orderBy: {field: CREATED_AT, direction: ASC}) {
+      nodes {
+        number title
+        subIssues(first: 30) {
+          totalCount
+          nodes { state }
+        }
+      }
+    }
+  }
+}'
 ```

@@ -20,7 +20,7 @@ All issue content (title, body) MUST be written in **English**.
 Fetch the epic issue content:
 
 ```bash
-gh issue view <number> --json number,title,body,labels,milestone
+gh issue view <number> --json number,title,body,labels
 ```
 
 Verify the issue is an Epic type. If not, warn the user and ask if they want to proceed anyway.
@@ -38,7 +38,6 @@ For each planned feature, draft a sub-issue with:
 - **Title** — concise, descriptive, no prefix
 - **Type** — typically Feature, but could be Task depending on scope
 - **Labels** — inherit from parent epic, adjust per sub-issue if needed
-- **Milestone** — inherit from parent epic
 - **Parent** — the epic issue number
 - **Body** — use the Feature template (see create-issue skill for templates)
 
@@ -69,7 +68,6 @@ Fetch IDs needed for creation:
 ```bash
 REPO_ID=$(gh api repos/typemd/typemd --jq '.node_id')
 PARENT_ID=$(gh issue view <epic_number> --json id --jq '.id')
-MILESTONE_ID=$(gh api repos/typemd/typemd/milestones/<number> --jq '.node_id')
 
 # For each label
 LABEL_ID=$(gh api repos/typemd/typemd/labels/<name> --jq '.node_id')
@@ -80,13 +78,12 @@ Create each sub-issue using GraphQL with `--input` (same pattern as create-issue
 ```bash
 cat > /tmp/create_issue.json << 'EOF'
 {
-  "query": "mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $milestoneId: ID, $labelIds: [ID!], $parentId: ID) { createIssue(input: { repositoryId: $repoId, title: $title, body: $body, issueTypeId: $typeId, milestoneId: $milestoneId, labelIds: $labelIds, parentIssueId: $parentId }) { issue { number url } } }",
+  "query": "mutation($repoId: ID!, $title: String!, $body: String!, $typeId: ID!, $labelIds: [ID!], $parentId: ID) { createIssue(input: { repositoryId: $repoId, title: $title, body: $body, issueTypeId: $typeId, labelIds: $labelIds, parentIssueId: $parentId }) { issue { number url } } }",
   "variables": {
     "repoId": "<REPO_ID>",
     "title": "<title>",
     "body": "<body with \\n for newlines>",
     "typeId": "<issue_type_id>",
-    "milestoneId": "<MILESTONE_ID or null>",
     "labelIds": ["<LABEL_ID_1>"],
     "parentId": "<PARENT_ID>"
   }
