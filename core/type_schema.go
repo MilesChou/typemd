@@ -386,7 +386,7 @@ func ValidateObject(props map[string]any, schema *TypeSchema) []error {
 
 	for _, prop := range schema.Properties {
 		val, ok := props[prop.Name]
-		if !ok {
+		if !ok || val == nil {
 			continue
 		}
 

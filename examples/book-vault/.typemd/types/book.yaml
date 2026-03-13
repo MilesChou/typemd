@@ -20,7 +20,6 @@ properties:
     type: date
     emoji: 📅
   - use: favorite
-  - use: tags
   - name: author
     type: relation
     emoji: ✍️
