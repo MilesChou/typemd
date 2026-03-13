@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mattn/go-runewidth"
 	"github.com/typemd/typemd/core"
 	"charm.land/lipgloss/v2"
 )
@@ -115,7 +116,13 @@ func renderList(groups []typeGroup, cursor, scrollOffset int, focused bool, widt
 				arrow = "▼"
 			}
 			if g.Emoji != "" {
-				line = fmt.Sprintf(" %s %s %s (%d)", arrow, g.Emoji, g.Name, len(g.Objects))
+				// Pad emoji to consistent width (2) to align type names
+				ew := runewidth.StringWidth(g.Emoji)
+				pad := ""
+				if ew < 2 {
+					pad = strings.Repeat(" ", 2-ew)
+				}
+				line = fmt.Sprintf(" %s %s%s %s (%d)", arrow, g.Emoji, pad, g.Name, len(g.Objects))
 			} else {
 				line = fmt.Sprintf(" %s %s (%d)", arrow, g.Name, len(g.Objects))
 			}

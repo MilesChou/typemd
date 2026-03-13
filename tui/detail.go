@@ -21,7 +21,14 @@ func renderTitleContent(obj *core.Object, typeName, emoji string, width int) str
 	}
 	var title string
 	if emoji != "" {
-		title = fmt.Sprintf(" %s %s · %s", emoji, typeName, obj.GetName())
+		// Pad emoji to consistent width (2 cells) to compensate for
+		// runewidth miscalculating emojis with variation selectors (e.g. 🏷️).
+		ew := runewidth.StringWidth(emoji)
+		pad := ""
+		if ew < 2 {
+			pad = strings.Repeat(" ", 2-ew)
+		}
+		title = fmt.Sprintf(" %s%s %s · %s", emoji, pad, typeName, obj.GetName())
 	} else {
 		title = fmt.Sprintf(" %s · %s", typeName, obj.GetName())
 	}
