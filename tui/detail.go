@@ -21,14 +21,7 @@ func renderTitleContent(obj *core.Object, typeName, emoji string, width int) str
 	}
 	var title string
 	if emoji != "" {
-		// Pad emoji to consistent width (2 cells) to compensate for
-		// runewidth miscalculating emojis with variation selectors (e.g. 🏷️).
-		ew := runewidth.StringWidth(emoji)
-		pad := ""
-		if ew < 2 {
-			pad = strings.Repeat(" ", 2-ew)
-		}
-		title = fmt.Sprintf(" %s%s %s · %s", emoji, pad, typeName, obj.GetName())
+		title = fmt.Sprintf(" %s %s · %s", padEmoji(emoji), typeName, obj.GetName())
 	} else {
 		title = fmt.Sprintf(" %s · %s", typeName, obj.GetName())
 	}
@@ -53,7 +46,7 @@ func renderBody(obj *core.Object, width int, displayProps []core.DisplayProperty
 	if len(pinned) > 0 {
 		for _, p := range pinned {
 			if p.Emoji != "" {
-				b.WriteString(fmt.Sprintf(" %s %s\n", p.Emoji, p.Format()))
+				b.WriteString(fmt.Sprintf(" %s %s\n", padEmoji(p.Emoji), p.Format()))
 			} else {
 				b.WriteString(fmt.Sprintf(" %s\n", p.Format()))
 			}

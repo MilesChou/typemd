@@ -10,6 +10,17 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
+// padEmoji strips the variation selector (U+FE0F) and pads the emoji
+// to a consistent 2-cell display width for terminal alignment.
+func padEmoji(emoji string) string {
+	display := strings.ReplaceAll(emoji, "\uFE0F", "")
+	ew := runewidth.StringWidth(display)
+	if ew < 2 {
+		return display + strings.Repeat(" ", 2-ew)
+	}
+	return display
+}
+
 // listRow represents one visible row in the left panel.
 // It is either a group header or an object item.
 type listRow struct {
@@ -116,13 +127,7 @@ func renderList(groups []typeGroup, cursor, scrollOffset int, focused bool, widt
 				arrow = "▼"
 			}
 			if g.Emoji != "" {
-				// Pad emoji to consistent width (2) to align type names
-				ew := runewidth.StringWidth(g.Emoji)
-				pad := ""
-				if ew < 2 {
-					pad = strings.Repeat(" ", 2-ew)
-				}
-				line = fmt.Sprintf(" %s %s%s %s (%d)", arrow, g.Emoji, pad, g.Name, len(g.Objects))
+				line = fmt.Sprintf(" %s %s %s (%d)", arrow, padEmoji(g.Emoji), g.Name, len(g.Objects))
 			} else {
 				line = fmt.Sprintf(" %s %s (%d)", arrow, g.Name, len(g.Objects))
 			}
