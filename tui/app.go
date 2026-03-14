@@ -183,200 +183,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyPressMsg:
-		// Help mode gets top priority
-		if m.showHelp {
-			switch msg.String() {
-			case "esc", "?", "h":
-				m.showHelp = false
-			}
-			return m, nil
-		}
-
-		// Search mode gets priority
-		if m.searchMode {
+		// Mode priority: help > search > conflict > edit > normal
+		switch {
+		case m.showHelp:
+			return updateHelp(m, msg)
+		case m.searchMode:
 			var cmd tea.Cmd
 			m, cmd = updateSearch(m, msg)
 			if !m.searchMode && m.searchResults != nil {
-				// Search completed, select first result if available
 				m.selectCurrentRow()
 			}
 			return m, cmd
-		}
-
-		// Conflict resolution intercepts y/n/esc
-		if m.saveConflict {
-			switch msg.String() {
-			case "y":
-				m.forceSave()
-			case "n":
-				m.reloadFromDisk()
-			case "esc":
-				m.saveConflict = false
-				m.saveErr = ""
-			}
-			return m, nil
-		}
-
-		// Edit mode intercepts all keys except Esc
-		if m.editMode {
-			if msg.String() == "esc" {
-				if m.focus == focusBody && m.selected != nil {
-					newBody := m.bodyTextarea.Value()
-					if newBody != m.bodyEditStart {
-						m.selected.Body = newBody
-						m.dirty = true
-						m.updateDetail()
-					}
-					m.bodyTextarea.Blur()
-				}
-				m.editMode = false
-				if m.dirty {
-					m.saveObject()
-				}
-				return m, nil
-			}
-			if m.focus == focusBody {
-				var cmd tea.Cmd
-				m.bodyTextarea, cmd = m.bodyTextarea.Update(msg)
-				return m, cmd
-			}
-			return m, nil
-		}
-
-		switch msg.String() {
-		case "q", "ctrl+c":
-			if m.vault != nil {
-				saveSessionState(m.vault.Root, m.captureState())
-			}
-			return m, tea.Quit
-
-		case "/":
-			m.searchMode = true
-			m.searchInput.Focus()
-			return m, textinput.Blink
-
-		case "e":
-			if m.readOnly {
-				return m, nil
-			}
-			if m.focus == focusBody && m.selected != nil {
-				m.editMode = true
-				m.bodyTextarea.SetValue(m.selected.Body)
-				m.bodyEditStart = m.bodyTextarea.Value() // snapshot after sanitization
-				m.resizeBodyTextarea()
-				m.bodyTextarea.CursorEnd()
-				return m, m.bodyTextarea.Focus()
-			}
-			if m.focus == focusProps {
-				m.editMode = true
-			}
-			return m, nil
-
-		case "tab":
-			switch m.focus {
-			case focusLeft:
-				m.focus = focusBody
-			case focusBody:
-				if m.propsVisible {
-					m.focus = focusProps
-				} else {
-					m.focus = focusLeft
-				}
-			case focusProps:
-				m.focus = focusLeft
-			}
-			return m, nil
-
-		case "w":
-			m.softWrap = !m.softWrap
-			m.updateDetail()
-			return m, nil
-
-		case "esc":
-			// Clear search results and return to normal list
-			if m.searchResults != nil {
-				m.searchResults = nil
-				m.cursor = 0
-				m.selectCurrentRow()
-				return m, nil
-			}
-
-		case "up", "k":
-			if m.focus == focusLeft {
-				rows := m.currentRows()
-				m.cursor = clampCursor(m.cursor-1, len(rows))
-				m.adjustScroll()
-				m.selectCurrentRow()
-			} else if m.focus == focusBody {
-				m.bodyViewport.ScrollUp(1)
-			} else if m.focus == focusProps {
-				m.propsViewport.ScrollUp(1)
-			}
-			return m, nil
-
-		case "down", "j":
-			if m.focus == focusLeft {
-				rows := m.currentRows()
-				m.cursor = clampCursor(m.cursor+1, len(rows))
-				m.adjustScroll()
-				m.selectCurrentRow()
-			} else if m.focus == focusBody {
-				m.bodyViewport.ScrollDown(1)
-			} else if m.focus == focusProps {
-				m.propsViewport.ScrollDown(1)
-			}
-			return m, nil
-
-		case "]":
-			m.resizePanel(+2)
-			return m, nil
-
-		case "[":
-			m.resizePanel(-2)
-			return m, nil
-
-		case "p":
-			m.propsVisible = !m.propsVisible
-			if !m.propsVisible && m.focus == focusProps {
-				m.focus = focusBody
-			}
-			// Recalculate widths for both panels
-			contentHeight := m.height - 3
-			if contentHeight < 0 {
-				contentHeight = 0
-			}
-			if m.selected != nil {
-				contentHeight -= titlePanelHeight
-				if contentHeight < 0 {
-					contentHeight = 0
-				}
-			}
-			m.bodyViewport.SetWidth(m.bodyWidth())
-			m.propsViewport.SetWidth(m.propsWidth)
-			m.propsViewport.SetHeight(contentHeight)
-			m.updateDetail()
-			return m, nil
-
-		case "?", "h":
-			m.showHelp = true
-			return m, nil
-
-		case "enter", " ":
-			if m.focus == focusLeft {
-				rows := m.currentRows()
-				if m.cursor >= 0 && m.cursor < len(rows) {
-					row := rows[m.cursor]
-					if row.IsHeader {
-						m.groups[row.GroupIndex].Expanded = !m.groups[row.GroupIndex].Expanded
-						// Re-clamp cursor after collapse
-						newRows := m.currentRows()
-						m.cursor = clampCursor(m.cursor, len(newRows))
-						m.adjustScroll()
-					}
-					m.selectCurrentRow()
-				}
-			}
-			return m, nil
+		case m.saveConflict:
+			return updateConflict(m, msg)
+		case m.editMode:
+			return updateEdit(m, msg)
+		default:
+			return updateNormal(m, msg)
 		}
 	}
 	// Route remaining messages (e.g. cursor blink) to textarea when in body edit mode
