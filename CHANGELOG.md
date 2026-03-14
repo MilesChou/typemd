@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v0.3.0] - 2026-03-14
+
+### Breaking Changes
+
+- Built-in Types Removed — `book`, `person`, `note` are no longer created by `tmd init`; define your own types instead (#208)
+- Reserved System Properties — `description`, `created_at`, `updated_at`, `tags` are now reserved names; type schemas that define properties with these names will fail validation. Remove them before upgrading (#193, #201, #204)
+
+### Added
+
+- Object Templates — place Markdown files in `templates/<type>/` to pre-fill frontmatter and body content on object creation; single template auto-applies, multiple templates prompt for selection (#173)
+- Name Templates — auto-generate object names from templates (e.g., `日記 {{ date:YYYY-MM-DD }}`) by defining a `template` on the `name` property in type schemas (#186)
+- Plural Display Names — `plural` field on type schemas for grammatically correct collection labels in the TUI (#205)
+- Unique Constraint — `unique: true` on type schemas to prevent duplicate object names within a type (#79)
+- Tag Name Validation — `tmd type validate` checks for duplicate tag names across the vault (#215)
+- System Properties — `description`, `created_at`, `updated_at`, `tags` are now built-in system properties managed by typemd on every object (#193, #201, #204)
+- Built-in Tag Type — `tag` is a built-in type with auto-creation during sync when objects reference non-existent tags (#204)
+- TUI Type Editor — full CRUD for type schemas directly in the TUI: view, edit, add/remove properties, reorder (#207)
+- Domain Events — entity operations emit domain events (`ObjectCreated`, `ObjectSaved`, `PropertyChanged`, `ObjectLinked`, `TagAutoCreated`) for extensibility (#226)
+- CQRS Architecture — core refactored to separate command (`ObjectService`) and query (`QueryService`) responsibilities with `ObjectRepository` and `ObjectIndex` interfaces (#224)
+
+### Fixed
+
+- TUI Emoji Alignment — consistent width handling for emoji with variation selectors
+
+[v0.3.0]: https://github.com/typemd/typemd/releases/tag/v0.3.0
+
 ## [v0.2.0] - 2026-03-11
 
 ### Breaking Changes

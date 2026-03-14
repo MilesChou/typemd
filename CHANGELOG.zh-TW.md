@@ -4,6 +4,32 @@
 
 格式依循 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [v0.3.0] - 2026-03-14
+
+### 破壞性變更
+
+- 移除內建型別 — `tmd init` 不再建立 `book`、`person`、`note`；請自行定義所需型別 (#208)
+- 保留系統屬性 — `description`、`created_at`、`updated_at`、`tags` 現為保留名稱；型別 schema 若定義這些屬性名稱，驗證將會失敗。升級前請先移除 (#193, #201, #204)
+
+### 新增
+
+- 物件範本 — 在 `templates/<type>/` 放置 Markdown 檔案，建立物件時自動套用 frontmatter 預設值與正文內容；單一範本自動套用，多個範本提示選擇 (#173)
+- 名稱範本 — 在型別 schema 的 `name` 屬性定義 `template`，自動產生物件名稱（例如 `日記 {{ date:YYYY-MM-DD }}`）(#186)
+- 複數顯示名稱 — 型別 schema 新增 `plural` 欄位，在 TUI 中使用文法正確的集合名稱 (#205)
+- 唯一性約束 — 型別 schema 設定 `unique: true`，防止同一型別中出現重複名稱 (#79)
+- 標籤名稱驗證 — `tmd type validate` 新增全 vault 標籤名稱唯一性檢查 (#215)
+- 系統屬性 — `description`、`created_at`、`updated_at`、`tags` 現為每個物件自動擁有的內建系統屬性 (#193, #201, #204)
+- 內建標籤型別 — `tag` 為內建型別，sync 時若物件參考不存在的標籤會自動建立 (#204)
+- TUI 型別編輯器 — 在 TUI 中直接進行型別 schema 的完整 CRUD：瀏覽、編輯、新增／刪除屬性、調整順序 (#207)
+- 領域事件 — 實體操作產生領域事件（`ObjectCreated`、`ObjectSaved`、`PropertyChanged`、`ObjectLinked`、`TagAutoCreated`），為擴充性打下基礎 (#226)
+- CQRS 架構 — core 重構為讀寫分離，寫入走 `ObjectService`、查詢走 `QueryService`，底層由 `ObjectRepository` 與 `ObjectIndex` 介面支撐 (#224)
+
+### 修正
+
+- TUI Emoji 對齊 — 修正含有 variation selector 的 emoji 寬度不一致問題
+
+[v0.3.0]: https://github.com/typemd/typemd/releases/tag/v0.3.0
+
 ## [v0.2.0] - 2026-03-11
 
 ### 破壞性變更
