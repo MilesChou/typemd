@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 	Use:     "tmd",
 	Short:   "A local-first CLI knowledge management tool",
 	Version: Version,
-	// 不帶子指令時啟動 TUI
+	// Launch TUI when no subcommand is given
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return tui.Start(vaultPath, readOnly, reindex)
 	},

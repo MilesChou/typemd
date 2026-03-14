@@ -252,6 +252,8 @@ func (v *Vault) NewObject(typeName, filename, templateName string) (*Object, err
 // saveObjectFile writes object properties to both .md file and SQLite.
 func (v *Vault) saveObjectFile(obj *Object) error {
 	obj.Properties[UpdatedAtProperty] = time.Now().Format(time.RFC3339)
+	// LoadType may fail for unknown types; nil schema is safe here because
+	// OrderedPropKeys falls back to map iteration order when schema is nil.
 	schema, _ := v.LoadType(obj.Type)
 	data, err := writeFrontmatter(obj.Properties, obj.Body, OrderedPropKeys(obj.Properties, schema))
 	if err != nil {

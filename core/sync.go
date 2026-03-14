@@ -141,10 +141,12 @@ func (v *Vault) walkAndUpsertObjects() (*syncContext, error) {
 		nameVal, hasName := props[NameProperty]
 		if !hasName || nameVal == nil || nameVal == "" {
 			props[NameProperty] = StripULID(filename)
-			if updated, err := writeFrontmatter(props, body, OrderedPropKeys(props, schemaCache[typeName])); err == nil {
-				if writeErr := os.WriteFile(path, updated, 0644); writeErr != nil {
-					return fmt.Errorf("write name migration for %s: %w", id, writeErr)
-				}
+			updated, err := writeFrontmatter(props, body, OrderedPropKeys(props, schemaCache[typeName]))
+			if err != nil {
+				return fmt.Errorf("write name migration frontmatter for %s: %w", id, err)
+			}
+			if err := os.WriteFile(path, updated, 0644); err != nil {
+				return fmt.Errorf("write name migration for %s: %w", id, err)
 			}
 		}
 
@@ -309,35 +311,50 @@ func (v *Vault) syncTagRelations(ctx *syncContext) error {
 
 	for objID, refs := range ctx.diskTagRefs {
 		for _, ref := range refs {
-			tagID, ok := v.resolveTagReference(ref, ctx.diskTags, tagNameIndex)
-			if !ok {
-				slug := strings.TrimPrefix(ref, "tag/")
-				if !ulidSuffixPattern.MatchString(slug) {
-					if existingID, exists := tagNameIndex[slug]; exists {
-						tagID = existingID
-					} else {
-						newTag, err := v.NewObject(TagTypeName, slug, "")
-						if err != nil {
-							continue
-						}
-						ctx.diskTags[newTag.ID] = newTag
-						ctx.diskIDs[newTag.ID] = true
-						tagNameIndex[slug] = newTag.ID
-						tagID = newTag.ID
-					}
-				} else {
-					continue
-				}
+			tagID, err := v.resolveOrCreateTag(ref, ctx, tagNameIndex)
+			if err != nil {
+				continue // skip unresolvable tag references
 			}
-			_, err := v.db.Exec(
+			if _, err := v.db.Exec(
 				"INSERT INTO relations (name, from_id, to_id) VALUES (?, ?, ?)",
 				TagsProperty, objID, tagID,
-			)
-			if err != nil {
+			); err != nil {
 				return fmt.Errorf("insert tag relation: %w", err)
 			}
 		}
 	}
 
 	return nil
+}
+
+// resolveOrCreateTag resolves a tag reference to an object ID.
+// For full ID references (tag/name-ulid), it checks existing tags.
+// For name references (tag/name or bare name), it looks up by name and auto-creates if needed.
+// Returns an error if the reference cannot be resolved (broken full-ID or creation failure).
+func (v *Vault) resolveOrCreateTag(ref string, ctx *syncContext, tagNameIndex map[string]string) (string, error) {
+	// Try resolving via existing tags first
+	if tagID, ok := v.resolveTagReference(ref, ctx.diskTags, tagNameIndex); ok {
+		return tagID, nil
+	}
+
+	slug := strings.TrimPrefix(ref, "tag/")
+
+	// Full ID references with ULID suffix that weren't resolved are broken
+	if ulidSuffixPattern.MatchString(slug) {
+		return "", fmt.Errorf("broken tag reference: %s", ref)
+	}
+
+	// Name reference — look up or auto-create
+	if existingID, exists := tagNameIndex[slug]; exists {
+		return existingID, nil
+	}
+
+	newTag, err := v.NewObject(TagTypeName, slug, "")
+	if err != nil {
+		return "", fmt.Errorf("auto-create tag %q: %w", slug, err)
+	}
+	ctx.diskTags[newTag.ID] = newTag
+	ctx.diskIDs[newTag.ID] = true
+	tagNameIndex[slug] = newTag.ID
+	return newTag.ID, nil
 }
