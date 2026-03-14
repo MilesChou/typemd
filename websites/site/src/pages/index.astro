@@ -40,35 +40,6 @@ import Layout from "../layouts/Layout.astro";
     </div>
   </section>
 
-  <!-- Quick Start -->
-  <section class="quickstart">
-    <h2>Quick Start</h2>
-    <div class="steps">
-      <div class="step">
-        <span class="step-number">1</span>
-        <div class="step-content">
-          <h3>Install</h3>
-          <pre><code>brew install typemd/tap/typemd-cli</code></pre>
-        </div>
-      </div>
-      <div class="step">
-        <span class="step-number">2</span>
-        <div class="step-content">
-          <h3>Initialize</h3>
-          <pre><code>tmd init</code></pre>
-        </div>
-      </div>
-      <div class="step">
-        <span class="step-number">3</span>
-        <div class="step-content">
-          <h3>Use</h3>
-          <pre><code>tmd</code></pre>
-          <p>Opens the TUI — a three-panel interface for browsing your vault.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Footer -->
   <footer>
     <div class="footer-content">
@@ -76,6 +47,8 @@ import Layout from "../layouts/Layout.astro";
         <a href="https://github.com/typemd/typemd">GitHub</a>
         <span class="separator">·</span>
         <a href="https://docs.typemd.io">Docs</a>
+        <span class="separator">·</span>
+        <a href="https://blog.typemd.io">Blog</a>
         <span class="separator">·</span>
         MIT License
       </p>
@@ -196,69 +169,6 @@ import Layout from "../layouts/Layout.astro";
     font-size: 0.95rem;
   }
 
-  /* Quick Start */
-  .quickstart {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 4rem 2rem;
-  }
-
-  .quickstart h2 {
-    text-align: center;
-    font-size: 2rem;
-    margin-bottom: 2.5rem;
-  }
-
-  .steps {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .step {
-    display: flex;
-    gap: 1.25rem;
-    align-items: flex-start;
-  }
-
-  .step-number {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    border-radius: 50%;
-    background: var(--color-primary);
-    color: white;
-    font-weight: 700;
-    font-size: 1rem;
-  }
-
-  .step-content h3 {
-    font-size: 1.125rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .step-content pre {
-    background: var(--color-surface);
-    border: 1px solid #2a2a3e;
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .step-content code {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    color: var(--color-primary-light);
-  }
-
-  .step-content p {
-    color: var(--color-text-muted);
-    font-size: 0.9rem;
-  }
-
   /* Footer */
   footer {
     border-top: 1px solid #2a2a3e;
@@ -313,16 +223,5 @@ import Layout from "../layouts/Layout.astro";
       grid-template-columns: 1fr;
     }
 
-    .quickstart {
-      padding: 2.5rem 1.25rem;
-    }
-
-    .step-content pre {
-      overflow-x: auto;
-    }
-
-    .step-content code {
-      font-size: 0.8rem;
-    }
   }
 </style>

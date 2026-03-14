@@ -33,7 +33,10 @@ export default defineConfig({
 					lang: 'zh-TW',
 				},
 			},
-			social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/typemd/typemd' }],
+			social: [
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/typemd/typemd' },
+				{ icon: 'pencil', label: 'Blog', href: 'https://blog.typemd.io' },
+			],
 			sidebar: [
 				{
 					label: 'Getting Started',

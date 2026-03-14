@@ -1,5 +1,5 @@
 ---
-name: release-note
+name: create-release
 description: Use when preparing a release, writing release notes, creating a GitHub draft release, or updating CHANGELOG.md. Triggers on "write release notes", "prepare release", "create release", "update changelog".
 ---
 
@@ -155,10 +155,10 @@ Do not guess property types, field names, or YAML structure from issue titles or
 Write a blog post at:
 
 ```
-websites/blog/src/content/posts/zh-tw/release-<VERSION-WITHOUT-V>.md
+websites/blog/src/content/posts/zh-tw/release-<VERSION-WITH-DASHES>.md
 ```
 
-e.g. `release-0.2.0.md`
+e.g. `release-0-2-0.md` (use dashes instead of dots to avoid URL issues)
 
 **Frontmatter:**
 
@@ -178,6 +178,7 @@ tags: [發布, 開發日誌]
 - Use we, not I
 - Explain key features with concrete, **verified** examples (code snippets, commands)
 - Keep it engaging, not just a feature list — tell a story around the release theme
+- **Focus on user-facing value** — explain what users can do now, not how the internals changed. Technical refactors (CQRS, DDD, architecture changes) belong in the CHANGELOG and GitHub release notes, but NOT in the blog post. The blog should only cover features, behaviors, and workflows that users interact with directly.
 - End with a forward-looking sentence about what's next
 
 **After writing zh-tw, present the draft to the user for review before writing the file. Only write the file after the user confirms.**
@@ -194,8 +195,8 @@ Once release notes, CHANGELOG, and blog post are ready:
 
 ```bash
 git add CHANGELOG.md CHANGELOG.zh-TW.md \
-  websites/blog/src/content/posts/zh-tw/release-<VERSION>.md \
-  websites/blog/src/content/posts/en/release-<VERSION>.md
+  websites/blog/src/content/posts/zh-tw/release-<VERSION-WITH-DASHES>.md \
+  websites/blog/src/content/posts/en/release-<VERSION-WITH-DASHES>.md
 
 git commit -m "chore(release): prepare v<VERSION> release notes and blog post"
 git push origin main
