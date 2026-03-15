@@ -32,6 +32,12 @@ A great book about Go concurrency patterns.
 See also: [[note/go-concurrency-patterns]]
 ```
 
+## 名稱不等於檔名
+
+Object 的顯示名稱（`name` 屬性）跟檔名是獨立的。檔名是穩定的儲存識別碼（slug + ULID）；name 是人類可讀的標籤，可以包含空格、大小寫混合和特殊字元。
+
+這個解耦意味著你可以重新命名 Object 而不需要搬動檔案，也可以從 template 自動產生名稱（例如 `日記 2026-03-14`），而不需要擔心檔案系統的限制。
+
 ## Object ID
 
 每個 Object 都有一個格式為 `type/slug-ulid` 的 ID，例如：

@@ -100,6 +100,7 @@ export default defineConfig({
 					items: [
 						{ label: 'Data Model', slug: 'developers/data-model' },
 						{ label: 'Architecture', slug: 'developers/architecture' },
+						{ label: 'Design Decisions', slug: 'developers/design-decisions' },
 					],
 				},
 			],

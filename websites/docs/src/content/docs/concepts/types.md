@@ -52,7 +52,7 @@ TypeMD has one built-in Type:
 |------|------------|---------|
 | 🏷️ `tag` | color (string), icon (string) | Backs the `tags` system property; has `unique: true` to enforce name uniqueness |
 
-All other Types are user-defined via `.typemd/types/*.yaml` files. You design your knowledge base by creating the Types that fit your domain — books, people, notes, projects, or anything else.
+`tag` is the only built-in type because it is the only type that backs a system property (`tags`). All other types are user-defined via `.typemd/types/*.yaml` files. TypeMD deliberately avoids shipping opinionated types like `book` or `note` — you design the types that fit your domain.
 
 For details on tags, see [Tags](/basics/tags).
 

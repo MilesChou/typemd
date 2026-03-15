@@ -32,6 +32,12 @@ A great book about Go concurrency patterns.
 See also: [[note/go-concurrency-patterns]]
 ```
 
+## Name is not filename
+
+An Object's display name (`name` property) is independent of its filename. The filename is a stable storage identifier (slug + ULID); the name is a human-readable label that can contain spaces, mixed casing, and special characters.
+
+This decoupling means you can rename an Object without moving files, and auto-generate names from templates (e.g., `日記 2026-03-14`) without worrying about filesystem constraints.
+
 ## Object ID
 
 Every Object has an ID in the format `type/slug-ulid`, for example:

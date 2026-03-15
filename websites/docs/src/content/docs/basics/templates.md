@@ -67,7 +67,7 @@ Templates can override **user-authored** system properties (`name`, `description
 
 ## Name Templates
 
-Name templates let type schemas define auto-generated Object names using placeholders. This is useful for Objects with time-based naming patterns, like journals or meeting notes.
+Object names are normally provided manually at creation time. For types with predictable naming patterns (daily journals, meeting notes, weekly reviews), this is repetitive and error-prone. Name templates let type schemas define auto-generated names using placeholders, enabling one-command object creation.
 
 ### Defining a name template
 

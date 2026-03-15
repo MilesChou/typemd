@@ -67,7 +67,7 @@ Template 可以覆蓋**使用者撰寫**的系統屬性（`name`、`description`
 
 ## Name Template
 
-Name template 讓 type schema 使用佔位符定義自動產生的 Object 名稱。這對於有時間命名模式的 Object 很實用，例如日記或會議筆記。
+Object 名稱通常在建立時手動提供。但對於有可預測命名模式的 type（每日日記、會議筆記、週報），手動輸入既重複又容易出錯。Name template 讓 type schema 使用佔位符定義自動產生的名稱，實現一個指令就能建立 object。
 
 ### 定義 name template
 

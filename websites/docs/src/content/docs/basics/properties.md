@@ -9,15 +9,15 @@ Properties are named fields on an Object, defined by its [Type schema](/concepts
 
 ## System Properties
 
-Every Object has five system properties managed by TypeMD. These always appear first in frontmatter, in the order shown below:
+Every Object has five system properties managed by TypeMD. These provide the baseline metadata that every knowledge management tool needs — identity, description, temporal tracking, and categorization — without requiring users to define them in every type schema.
 
-| Property | Description | Mutability |
-|----------|-------------|------------|
-| `name` | Display name, auto-populated from the slug on creation | User-authored |
-| `description` | Optional single-line summary for list displays and search results | User-authored |
-| `created_at` | Creation timestamp in RFC 3339 format (set once, never modified) | Auto-managed |
-| `updated_at` | Last-modified timestamp in RFC 3339 format (updated on every save) | Auto-managed |
-| `tags` | Array of tag references (relation to the built-in `tag` type, multiple) | User-authored |
+| Property | Description | Mutability | Why |
+|----------|-------------|------------|-----|
+| `name` | Display name, auto-populated from the slug on creation | User-authored | Decouples display from filename — supports spaces, casing, and renaming without moving files |
+| `description` | Optional single-line summary for list displays and search results | User-authored | Provides a consistent summary field across all types, used in list views, search results, and API responses |
+| `created_at` | Creation timestamp in RFC 3339 format (set once, never modified) | Auto-managed | Enables sorting by creation date and understanding the timeline of a vault |
+| `updated_at` | Last-modified timestamp in RFC 3339 format (updated on every save) | Auto-managed | Enables sorting by recency and tracking the evolution of Objects |
+| `tags` | Array of tag references (relation to the built-in `tag` type, multiple) | User-authored | Cross-cutting categorization that works across all types |
 
 **User-authored** properties (`name`, `description`, `tags`) can be overridden by [object templates](/basics/templates). **Auto-managed** properties (`created_at`, `updated_at`) cannot be overridden — they always reflect the actual creation and modification times.
 
@@ -88,6 +88,10 @@ Beyond `name` and `type`, properties support optional attributes:
 | `pin` | integer | Positive integer for prominent display at the top of the TUI body panel. Lower values appear first. Pinned properties are excluded from the Properties panel. |
 | `default` | any | Default value assigned when creating a new object |
 
+**Why emoji?** In compact UI contexts (TUI properties panel, table columns), property names consume significant horizontal space. Emojis provide a space-efficient visual identifier that is instantly recognizable.
+
+**Why pin?** Without pinning, all properties are displayed equally in the Properties panel. Users must scan the full list to find key metadata like status or rating. Pinning lets type authors mark specific properties for prominent display at the top of the body panel.
+
 ### Pin example
 
 ```yaml
@@ -104,6 +108,8 @@ Beyond `name` and `type`, properties support optional attributes:
 Pin values must be positive integers and unique within a type schema. Properties without `pin` (or `pin: 0`) appear in the Properties panel as usual.
 
 ## Shared Properties
+
+When the same property appears in multiple types, defining it independently in each schema leads to duplication and inconsistency — a `due_date` in `project` might use `date` while `task` uses `datetime`. Shared properties let you define once and reference everywhere, ensuring consistent definitions across types.
 
 If the same property appears in multiple types (e.g., `due_date` in both `project` and `task`), you can define it once in `.typemd/properties.yaml` and reference it with the `use` keyword.
 

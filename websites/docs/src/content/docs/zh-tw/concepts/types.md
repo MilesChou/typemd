@@ -52,7 +52,7 @@ TypeMD 只有一個內建 Type：
 |------|------|------|
 | 🏷️ `tag` | color (string)、icon (string) | 支援 `tags` 系統屬性；具有 `unique: true` 以強制 name 唯一性 |
 
-所有其他 Type 都是使用者透過 `.typemd/types/*.yaml` 檔案自行定義。你可以設計符合自己領域的 Type——書籍、人物、筆記、專案，或任何其他分類。
+`tag` 是唯一的內建 type，因為它是唯一支撐系統屬性（`tags`）的 type。所有其他 type 都由使用者透過 `.typemd/types/*.yaml` 檔案自行定義。TypeMD 刻意不預設附帶 `book` 或 `note` 等帶有主觀用途的 type——你可以設計符合自己領域的 type。
 
 關於標籤的詳細說明，請參閱[標籤](/zh-tw/basics/tags)。
 
