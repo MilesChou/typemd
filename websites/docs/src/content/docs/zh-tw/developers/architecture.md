@@ -2,7 +2,7 @@
 title: 系統架構
 description: TypeMD 核心函式庫的內部設計。
 sidebar:
-  order: 7
+  order: 2
 ---
 
 TypeMD 的 `core/` 套件遵循 **Clean Architecture** 搭配 **CQRS**（Command Query Responsibility Segregation）模式。本頁說明內部設計，適合貢獻者和插件開發者參考。
@@ -156,4 +156,4 @@ vault.Events.Subscribe(func(e core.DomainEvent) {
 | try.typemd.io | `GitHubObjectRepository`（GitHub API）| `InMemoryObjectIndex` |
 | 桌面應用（Wails）| `LocalObjectRepository` | `SQLiteObjectIndex` |
 
-檔案永遠是 source of truth。索引是可選的加速層，可以隨時從檔案重建。
+檔案永遠是 source of truth。索引是可選的加速層，可以隨時從檔案重建。索引機制的詳細說明請參閱[資料模型](/zh-tw/developers/data-model)。

@@ -2,7 +2,7 @@
 title: Architecture
 description: How TypeMD's core library is structured internally.
 sidebar:
-  order: 7
+  order: 2
 ---
 
 TypeMD's `core/` package follows **Clean Architecture** with **CQRS** (Command Query Responsibility Segregation). This page explains the internal design for contributors and plugin developers.
@@ -156,4 +156,4 @@ The interface-based design enables multiple storage backends:
 | try.typemd.io | `GitHubObjectRepository` (GitHub API) | `InMemoryObjectIndex` |
 | Desktop (Wails) | `LocalObjectRepository` | `SQLiteObjectIndex` |
 
-Files are always the source of truth. The index is an optional acceleration layer that can be rebuilt from files at any time.
+Files are always the source of truth. The index is an optional acceleration layer that can be rebuilt from files at any time. For details on the indexing mechanism, see [Data Model](/developers/data-model).

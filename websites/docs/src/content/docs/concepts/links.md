@@ -1,13 +1,13 @@
 ---
-title: Wiki-links
+title: Links
 description: Inline references between Objects using [[target]] syntax.
 sidebar:
   order: 5
 ---
 
-A Wiki-link is an inline reference to another Object, written directly in your Markdown body. It's the simplest way to connect ideas as you write.
+A link is an inline reference to another Object, written directly in your Markdown body using wiki-link syntax (`[[...]]`). It's the simplest way to connect ideas as you write.
 
-## What is a Wiki-link?
+## Syntax
 
 When you mention another Object in your notes, you can wrap its ID in double brackets:
 
@@ -34,13 +34,15 @@ The target must be a full Object ID (including the ULID suffix).
 
 1. When the index is synced (`tmd --reindex` or auto-sync), the indexer parses `[[...]]` patterns from each Object's body
 2. Targets are resolved against existing Objects in the database
-3. Wiki-link records are stored in the SQLite index for fast backlink lookups
-4. On re-sync, wiki-links that have been removed from the body are automatically cleaned up — their backlinks are also removed
+3. Link records are stored in the SQLite index for fast backlink lookups
+4. On re-sync, links that have been removed from the body are automatically cleaned up — their backlinks are also removed
 5. Unresolvable targets are stored as broken links (detectable via `tmd type validate`)
 
 ## Backlinks
 
-Wiki-links are tracked automatically. If Object A contains `[[B]]`, then B knows that A references it — this is called a **backlink**.
+Every link creates a reverse connection automatically. If Object A contains `[[B]]`, then B knows that A references it — this is called a **backlink**.
+
+Backlinks are a powerful way to discover related content without any manual effort. You write a link in one direction, and TypeMD tracks the reverse for you.
 
 Backlinks appear as a built-in property when viewing an Object:
 
@@ -48,22 +50,22 @@ Backlinks appear as a built-in property when viewing an Object:
 backlinks: ⟵ A
 ```
 
-You don't need to maintain backlinks manually. TypeMD computes them from the wiki-link syntax in your Markdown body.
+You don't need to maintain backlinks manually. TypeMD computes them from the wiki-link syntax in your Markdown body. When a link is removed from the source Object's body, the corresponding backlink is automatically cleaned up during the next sync.
 
-## Wiki-links vs. Relations
+## Links vs. Relations
 
 TypeMD has two ways to connect Objects. They serve different purposes:
 
-| | Wiki-link | Relation |
-|---|-----------|----------|
+| | Link | Relation |
+|---|------|----------|
 | Defined in | Markdown body | Type schema (frontmatter) |
 | Structured | No — freeform inline reference | Yes — named, typed, queryable |
 | Bidirectional | Via backlinks (read-only, automatic) | Configurable per schema |
 | Schema required | No | Yes (`type: relation`) |
 | Use case | Informal references (see also, mentioned in) | Formal connections (author, project members) |
 
-**Rule of thumb**: use Relations for connections that are part of your data model. Use wiki-links for casual references in your notes.
+**Rule of thumb**: use Relations for connections that are part of your data model. Use links for casual references in your notes.
 
 ## Validation
 
-`tmd type validate` includes a wiki-link validation phase that detects broken links — references to Objects that do not exist.
+`tmd type validate` includes a link validation phase that detects broken links — references to Objects that do not exist.

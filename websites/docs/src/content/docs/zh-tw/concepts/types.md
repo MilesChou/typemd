@@ -54,23 +54,9 @@ TypeMD 只有一個內建 Type：
 
 所有其他 Type 都是使用者透過 `.typemd/types/*.yaml` 檔案自行定義。你可以設計符合自己領域的 Type——書籍、人物、筆記、專案，或任何其他分類。
 
-## 標籤
+關於標籤的詳細說明，請參閱[標籤](/zh-tw/basics/tags)。
 
-標籤在 TypeMD 中是一級 Object。每個 Object 都有一個 `tags` [系統屬性](/zh-tw/concepts/data-model#系統屬性)，存放對 `tag` Object 的參照。內建的 `tag` type 在 schema 中設有 `unique: true`，因此標籤名稱必須唯一。此唯一性約束在建立時強制執行，並由 `tmd type validate` 驗證。任何使用者自訂的 type 也可以透過在 schema 中加入 `unique: true` 來啟用 name 唯一性。
-
-在 frontmatter 中，標籤參照可以使用完整的 Object ID 或標籤名稱：
-
-```yaml
-tags:
-  - tag/go
-  - tag/programming-01jqr3k5mpbvn8e0f2g7h9txyz
-```
-
-同步時，TypeMD 會將名稱參照解析為完整 ID，並自動建立不存在的標籤。
-
-## Type vs. 標籤
-
-標籤跨 Type 分類 Object——一本 `book` 和一篇 `note` 可以共用同一個標籤。Type 定義結構——一本 `book` 永遠有 title、status 和 rating。使用 Type 確保結構一致性；使用標籤進行跨類型分類。
+關於 object template 的詳細說明，請參閱[模板](/zh-tw/basics/templates)。
 
 ## 屬性型別
 
@@ -90,9 +76,7 @@ Type schema 中每個屬性都有一個資料型別：
 
 Relation 屬性的 `target`、`bidirectional`、`inverse` 和 `multiple` 欄位，請參閱 [Relation](/zh-tw/concepts/relations) 頁面。
 
-## Shared Properties
-
-如果同一個屬性出現在多個 type 中（例如 `due_date` 同時在 `project` 和 `task` 裡），你可以在 `.typemd/properties.yaml` 中定義一次，然後用 `use` 關鍵字引用。詳情請參閱 [Shared Properties](/zh-tw/concepts/shared-properties)。
+如果某個屬性出現在多個 type 中，你可以定義一次然後重複使用。詳情請參閱 [Shared Properties](/zh-tw/basics/properties#shared-properties)。
 
 ## 驗證
 
@@ -106,4 +90,4 @@ TypeMD 採用寬鬆驗證：
 - `date` 必須是 YYYY-MM-DD 格式
 - `url` 必須以 http:// 或 https:// 開頭
 - `relation` 的目標會檢查 Type 是否正確
-- 屬性名稱 `name`、`description`、`created_at`、`updated_at` 和 `tags` 為[系統屬性](/zh-tw/concepts/data-model#系統屬性)保留，不能在 type schema 中使用
+- 屬性名稱 `name`、`description`、`created_at`、`updated_at` 和 `tags` 為[系統屬性](/zh-tw/advanced/file-structure#系統屬性)保留，不能在 type schema 中使用

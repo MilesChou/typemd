@@ -13,7 +13,7 @@ typemd's behavior is defined across three sources with different purposes:
 
 - **BDD feature files** (`core/features/*.feature`) — Executable behavior specs in Gherkin syntax. Evidence of what the code actually does.
 - **OpenSpec specs** (`openspec/specs/*/spec.md`) — Requirements in RFC 2119 language (SHALL/MUST/MAY). The authoritative source for what features should do.
-- **Documentation** (`websites/docs/src/content/docs/`) — User-facing explanations. What users are told features do.
+- **Documentation** (`websites/docs/src/content/docs/`) — User-facing explanations. What users are told features do. The docs are assumed to be correct — they are the source of truth for terminology and user-facing descriptions.
 
 These should stay aligned, but drift happens as development iterates: OpenSpec adds a requirement without a BDD scenario, docs describe behavior differently from tests, or the same concept gets different names in different places.
 
@@ -21,10 +21,12 @@ The goal is to **systematically surface contradictions**, not fix them — the u
 
 ## Usage
 
-The user can specify scope or request a full scan:
+The user can specify scope or default to a full scan:
 
 - Scoped: "Check consistency for relations" → only compare relation-related files
-- Full scan: "Do a full consistency check" → scan all concept areas
+- Full scan: No scope specified, or "do a full consistency check" → scan all concept areas
+
+**Default behavior: if the user does not specify a scope, perform a full scan.**
 
 ## Process
 
@@ -36,7 +38,7 @@ digraph consistency_check {
   scope [label="1. Determine scope\nspecific concept or full scan"];
   collect [label="2. Collect sources\nlocate corresponding files"];
   scenario [label="3. Compare scenarios\nfind behavioral contradictions"];
-  terminology [label="4. Compare terminology\nfind naming inconsistencies"];
+  terminology [label="4. Compare terminology\nread docs glossary as source of truth"];
   report [label="5. Produce report"];
   triage [label="6. Triage coverage gaps\n(optional) verify Go code\nclassify A/B/C" style=dashed];
 
@@ -49,24 +51,24 @@ digraph consistency_check {
 
 Identify which concept areas to check. Use this mapping to locate corresponding files across the three sources:
 
-| Concept Area | BDD feature files | OpenSpec specs | Docs (en) |
-|-------------|-------------------|----------------|-----------|
+| Concept Area | BDD feature files | OpenSpec specs | Docs |
+|-------------|-------------------|----------------|------|
 | Object lifecycle | `object.feature` | — | `concepts/objects.md` |
 | Relation | `relation.feature` | `object-relations/spec.md` | `concepts/relations.md` |
-| System Properties | `system_property.feature` | `system-properties/spec.md`, `system-property-registry/spec.md` | `concepts/objects.md` (partial) |
+| System Properties | `system_property.feature` | `system-properties/spec.md`, `system-property-registry/spec.md` | `basics/properties.md` |
 | Type Schema | `type_crud.feature` | `type-schema/spec.md` | `concepts/types.md` |
-| Name Property | `name_property.feature` | `name-property/spec.md` | `concepts/objects.md` (partial) |
-| Name Template | `name_template.feature` | `name-template/spec.md` | `concepts/types.md` (partial) |
-| Unique Constraint | `unique_constraint.feature` | `unique-constraint/spec.md` | `concepts/types.md` (partial) |
-| Wiki-links | `wikilink.feature` | `wiki-links/spec.md` | `concepts/wiki-links.md` |
-| Shared Properties | `shared_properties.feature` | `shared-properties/spec.md` | `concepts/types.md` (partial) |
-| Tags | `tag_type.feature`, `tag_resolution.feature`, `tag_uniqueness.feature` | — (see changes/) | — |
-| Object Templates | `object_template.feature` | — (see changes/) | — |
-| Property Emoji | `property_emoji.feature` | `property-emoji/spec.md` | — |
-| Pinned Properties | `pinned_property.feature` | `pinned-properties/spec.md` | — |
-| Query / Search | `query.feature` | — | `concepts/data-model.md` (partial) |
+| Name Property | `name_property.feature` | `name-property/spec.md` | `basics/properties.md` (partial) |
+| Name Template | `name_template.feature` | `name-template/spec.md` | `basics/templates.md` |
+| Unique Constraint | `unique_constraint.feature` | `unique-constraint/spec.md` | `basics/validation.md` (partial) |
+| Links | `wikilink.feature` | `wiki-links/spec.md` | `concepts/links.md` |
+| Shared Properties | `shared_properties.feature` | `shared-properties/spec.md` | `basics/properties.md` (partial) |
+| Tags | `tag_type.feature`, `tag_resolution.feature`, `tag_uniqueness.feature` | — (see changes/) | `basics/tags.md` |
+| Object Templates | `object_template.feature` | — (see changes/) | `basics/templates.md` (partial) |
+| Property Emoji | `property_emoji.feature` | `property-emoji/spec.md` | `basics/properties.md` (partial) |
+| Pinned Properties | `pinned_property.feature` | `pinned-properties/spec.md` | `basics/properties.md` (partial) |
+| Query / Search | `query.feature` | — | `basics/queries.md`, `basics/search.md` |
 | Plural Display Name | `plural_display_name.feature` | — (see changes/) | — |
-| Frontmatter | `frontmatter.feature` | — | `concepts/objects.md` (partial) |
+| Frontmatter | `frontmatter.feature` | — | `advanced/frontmatter.md` |
 
 If the user says "all", scan each area. If the user names an area not in the table, use Glob and Grep to find related files.
 
@@ -76,8 +78,8 @@ For each concept area, read the content from all three sources. File paths:
 
 - BDD: `core/features/<name>.feature`
 - OpenSpec: `openspec/specs/<name>/spec.md`
-- Docs (en): `websites/docs/src/content/docs/concepts/<name>.md` or `reference/<name>.md`
-- Docs (zh-tw): `websites/docs/src/content/docs/zh-tw/concepts/<name>.md`
+- Docs (en): `websites/docs/src/content/docs/` under `concepts/`, `basics/`, `advanced/`, `cli/`, or `tui/`
+- Docs (zh-tw): same structure under `zh-tw/`
 
 Use an Explore agent to read multiple areas in parallel when doing a full scan.
 
@@ -119,38 +121,25 @@ Does the Data Model and Architecture section in `CLAUDE.md` match the other thre
 
 This step finds **naming inconsistencies**. The same concept should use the same term everywhere.
 
+#### Source of Truth
+
+Read the docs glossary page (`concepts/glossary.md` and `zh-tw/concepts/glossary.md`) as the canonical terminology reference. The glossary defines:
+- The English term for each concept
+- The zh-tw translation (in parentheses after the heading, e.g. "Object（物件）")
+- The canonical definition
+
+Use the glossary to check whether BDD, OpenSpec, and other docs pages use consistent terminology.
+
 #### Dimensions to Check
 
 | Dimension | Description | Example |
 |-----------|-------------|---------|
-| **zh-tw / en alignment** | Same concept translated consistently | "relation" → always "關聯", not sometimes "連結" |
+| **zh-tw / en alignment** | Same concept translated consistently per glossary | "relation" → always "關聯", not sometimes "連結" |
 | **Verb usage** | Same operation uses same verb | create vs add vs new; link vs connect vs relate |
 | **Noun capitalization** | Concept names consistently capitalized | Object vs object; Type vs type |
-| **Compound words** | Hyphenation/spacing consistent | wiki-link vs wikilink vs wiki link |
+| **Compound words** | Hyphenation/spacing consistent | link vs wiki-link vs wikilink |
 | **Property terminology** | property/field/attribute consistent | property vs field vs column |
 | **Value descriptions** | Boolean/enum values described consistently | `multiple: true` vs "multi-value" vs "allows multiple" |
-
-#### Canonical Terminology Reference
-
-These are the expected terms for cross-referencing:
-
-| English | zh-tw | Notes |
-|---------|-------|-------|
-| Object | 物件 | Not 對象 |
-| Type | 類型 | Not 型別 (this is domain modeling, not programming language types) |
-| Relation | 關聯 | Not 關係 or 連結 |
-| Property | 屬性 | Not 特性 or 欄位 |
-| Wiki-link | Wiki-link | Keep English, hyphenated |
-| Backlink | 反向連結 | |
-| Tag | 標籤 | |
-| Slug | Slug | Keep English |
-| ULID | ULID | Keep English |
-| Vault | Vault | Keep English |
-| Frontmatter | Frontmatter | Keep English |
-| Template | 模板 | Not 範本 |
-| Scenario | 情境 | In BDD context |
-
-If terms not in this table are found to be inconsistent, record them as well.
 
 ### 5. Produce Report
 
@@ -181,8 +170,7 @@ Date: [date]
 
 | Concept | Location A | Term A | Location B | Term B | Suggestion |
 |---------|-----------|--------|-----------|--------|------------|
-| Relation | docs/relations.md:L12 | "連結" | docs/overview.md:L5 | "關聯" | Unify to "關聯" |
-| Wiki-link | wikilink.feature:L3 | "wikilink" | wiki-links/spec.md:L1 | "wiki-link" | Unify to "wiki-link" |
+| Relation | basics/properties.md:L12 | "連結" | concepts/glossary.md | "關聯" | Unify to "關聯" per glossary |
 ```
 
 #### Action Categories
@@ -222,7 +210,7 @@ A coverage gap has three possible realities:
 
 #### How to triage
 
-For each MEDIUM coverage gap from the report:
+For each BDD coverage gap from the report:
 
 1. **Read the Go source code** that handles the relevant behavior. Use Grep to find the function or method mentioned in the OpenSpec requirement (e.g., `LinkObjects`, `UnlinkObjects`, `SyncWikiLinks`).
 2. **Trace the code path** described in the OpenSpec scenario. Does the code handle this case? What does it return?
@@ -250,15 +238,16 @@ Append the triage results to the consistency check report:
 
 Triage in this order (highest risk first):
 
-1. **HIGH severity items** from the report — these are known contradictions, verify the code behavior
+1. **CODE items** from the report — these are known contradictions, verify the code behavior
 2. **Relation gaps** — error handling paths are most likely to have A/B/C mix
-3. **Wiki-link gaps** — deduplication and cleanup are often edge cases that may not be implemented
-4. **Other MEDIUM gaps** — remaining items
+3. **Link gaps** — deduplication and cleanup are often edge cases that may not be implemented
+4. **Other BDD gaps** — remaining items
 
 ## Important Notes
 
 - Steps 1–5 produce a read-only report. Step 6 (triage) is optional and also read-only — it classifies gaps but does not modify files. The user decides follow-up actions.
-- OpenSpec is the authoritative source for requirements. When OpenSpec conflicts with BDD/docs, usually BDD/docs need updating — but OpenSpec could also be outdated. The report should mention both possibilities.
+- **Docs are the source of truth for terminology.** The glossary page (`concepts/glossary.md`) defines canonical terms. When other sources use different terms, they should align to the glossary.
+- OpenSpec is the authoritative source for requirements. When OpenSpec conflicts with BDD, usually BDD needs updating — but OpenSpec could also be outdated. The report should mention both possibilities.
 - BDD scenario names don't need to exactly match OpenSpec requirement names. Semantic correspondence is what matters.
 - Both en and zh-tw docs should be checked. Translation consistency between en/zh-tw is also in scope.
 - If a concept area only has two sources (e.g., has BDD but no OpenSpec), compare the available two and note the missing third source.

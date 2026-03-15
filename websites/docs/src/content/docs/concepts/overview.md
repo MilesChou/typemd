@@ -1,54 +1,37 @@
 ---
 title: Concepts Overview
-description: Key terms and concepts in TypeMD.
+description: The design philosophy behind TypeMD.
 sidebar:
   order: 1
 ---
 
-TypeMD uses a small set of core concepts to organize your knowledge. This page gives a quick definition of each term. For deeper explanations, see the dedicated pages linked below.
+TypeMD is a local-first knowledge management tool built around one core idea: **think in Objects, not files**.
 
-## Vault
+## Objects, not files
 
-A Vault is a directory managed by TypeMD. It contains a `.typemd/` configuration folder, an `objects/` folder for your content, and an optional `templates/` folder for object templates. Each Vault is self-contained — you can move, copy, or version-control it like any folder.
+Most note-taking tools organize content as files in folders. TypeMD takes a different approach — your knowledge is made of **Objects**. A book, a person, an idea, a meeting — each is an Object with a defined structure and typed connections to other Objects.
 
-## Object
+The file system is just a storage layer. You interact with Objects, not filenames.
 
-An Object is the basic unit of knowledge in TypeMD. Instead of thinking in "files" or "notes", you think in Objects — a book, a person, an idea, a meeting.
+## Structure through Types
 
-Each Object is stored as a Markdown file with YAML frontmatter (properties) and a body for free-form content.
+Every Object belongs to a **Type** that defines its structure. A `book` has an `author` and `status`; a `person` has a `role` and `company`. Types are defined as simple YAML schema files — you design the structure that fits your thinking.
 
-[Learn more about Objects →](/concepts/objects)
+## Connections through Relations and Links
 
-## Type
+Objects connect to each other in two ways:
 
-A Type defines what kind of Object you're creating. Every Object belongs to exactly one Type (e.g. `book`, `person`, `note`). Types are defined by schema files that specify which properties an Object can have.
+- **Relations** — structured, typed links defined in the schema. A book's `author` relation points to a `person` Object. Relations can be bidirectional: updating one side automatically updates the other.
+- **Links** — inline references using `[[type/slug-ulid]]` syntax in the Markdown body. Lighter than Relations, useful for ad-hoc connections. TypeMD tracks backlinks automatically.
 
-[Learn more about Types →](/concepts/types)
+## Local-first, Markdown-native
 
-## Relation
+Everything is stored as plain Markdown files with YAML frontmatter. No cloud dependency, no lock-in. You can read, edit, and version-control your knowledge base with any tool.
 
-A Relation is a named, typed link between two Objects. Unlike a simple hyperlink, Relations are defined in the Type schema and can be bidirectional — updating one side automatically updates the other.
+## Learn more
 
-[Learn more about Relations →](/concepts/relations)
-
-## Property
-
-A Property is a named field on an Object, defined by its Type schema. Properties have types like `string`, `number`, `date`, `select`, or `relation`. They are stored in the YAML frontmatter of the Markdown file. Properties can also have optional attributes like `emoji` (visual icon), `pin` (prominent display), and `default` (default value).
-
-## Slug
-
-A Slug is the human-readable part of an Object's filename, e.g. `golang-in-action` in `book/golang-in-action-01jqr3k5mpbvn8e0f2g7h9txyz.md`. Slugs are derived from the name you give when creating an Object.
-
-## ULID
-
-A ULID (Universally Unique Lexicographically Sortable Identifier) is a 26-character ID automatically appended to the slug when you create an Object via the CLI. It ensures uniqueness even if two Objects share the same slug. Objects created manually (without the CLI) do not require a ULID.
-
-## Wiki-link
-
-A Wiki-link is an inline reference to another Object using `[[type/slug-ulid]]` syntax in the Markdown body. The target must be a full Object ID including the ULID suffix. TypeMD tracks these links and their backlinks, so you can discover connections between Objects.
-
-[Learn more about Wiki-links →](/concepts/wiki-links)
-
-## Index
-
-The Index is a SQLite database (`.typemd/index.db`) that caches Object metadata for fast querying and searching. It is automatically built and updated — you never need to edit it by hand.
+- [Objects](/concepts/objects) — what Objects are and how they work
+- [Types](/concepts/types) — defining structure with schemas
+- [Relations](/concepts/relations) — structured connections between Objects
+- [Links](/concepts/links) — inline references and backlinks
+- [Glossary](/concepts/glossary) — definitions of all key terms

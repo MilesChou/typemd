@@ -54,40 +54,9 @@ TypeMD has one built-in Type:
 
 All other Types are user-defined via `.typemd/types/*.yaml` files. You design your knowledge base by creating the Types that fit your domain — books, people, notes, projects, or anything else.
 
-## Tags
+For details on tags, see [Tags](/basics/tags).
 
-Tags are first-class Objects in TypeMD. Every Object has a `tags` [system property](/concepts/data-model#system-properties) that holds references to `tag` Objects. The built-in `tag` type has `unique: true` in its schema, which means tag names must be unique. This uniqueness constraint is enforced at creation time and validated by `tmd type validate`. Any user-defined type can also enable name uniqueness by adding `unique: true` to its schema.
-
-In frontmatter, tag references can use either the full Object ID or the tag name:
-
-```yaml
-tags:
-  - tag/go
-  - tag/programming-01jqr3k5mpbvn8e0f2g7h9txyz
-```
-
-During sync, TypeMD resolves name-based references to their full IDs and auto-creates missing tags.
-
-## Object templates
-
-Each Type can have one or more object templates stored at `templates/<type>/<name>.md`. Templates are regular Markdown files with optional frontmatter and body content that provide defaults when creating new Objects.
-
-```bash
-# If book has one template, it auto-applies
-tmd object create book clean-code
-
-# Specify a template explicitly
-tmd object create book clean-code -t review
-
-# If multiple templates exist, you'll be prompted to choose
-tmd object create book clean-code
-```
-
-Template frontmatter properties override the schema's default values. The template body becomes the initial body of the new Object. Auto-managed system properties (`created_at`, `updated_at`) in templates are ignored — they always reflect the actual creation time.
-
-## Types vs. tags
-
-Tags categorize Objects across Types — a `book` and a `note` can share the same tag. Types define structure — a `book` always has title, status, and rating. Use Types for structural consistency; use tags for cross-cutting categorization.
+For details on object templates, see [Templates](/basics/templates).
 
 ## Property types
 
@@ -107,9 +76,7 @@ Each property in a Type schema has a data type:
 
 For relation properties, see the [Relations](/concepts/relations) page for details on `target`, `bidirectional`, `inverse`, and `multiple` fields.
 
-## Shared Properties
-
-If the same property appears in multiple types (e.g., `due_date` in both `project` and `task`), you can define it once in `.typemd/properties.yaml` and reference it with the `use` keyword. See [Shared Properties](/concepts/shared-properties) for details.
+If a property appears in multiple types, you can define it once and reuse it. See [Shared Properties](/basics/properties#shared-properties) for details.
 
 ## Validation
 
@@ -123,4 +90,4 @@ TypeMD uses lenient validation:
 - `date` must be in YYYY-MM-DD format
 - `url` must start with http:// or https://
 - `relation` targets are checked for correct type
-- Property names `name`, `description`, `created_at`, `updated_at`, and `tags` are reserved for [system properties](/concepts/data-model#system-properties) and cannot be used in type schemas
+- Property names `name`, `description`, `created_at`, `updated_at`, and `tags` are reserved for [system properties](/advanced/file-structure#system-properties) and cannot be used in type schemas
