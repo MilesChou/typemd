@@ -30,3 +30,11 @@ Feature: Property emoji
     And a type schema "item" with some properties missing emojis
     When I validate all schemas
     Then schema "item" should have no errors
+
+  Scenario: Same emoji allowed across different types
+    Given a vault is ready
+    And a type schema "book" with property "title" having emoji "📖"
+    And a type schema "article" with property "headline" having emoji "📖"
+    When I validate all schemas
+    Then schema "book" should have no errors
+    And schema "article" should have no errors

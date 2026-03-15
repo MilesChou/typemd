@@ -45,6 +45,12 @@ Feature: System property registry
     When I validate all schemas
     Then shared properties should have errors
 
+  Scenario: Shared property validation rejects updated_at
+    Given a vault is ready
+    And a shared properties file with a system property "updated_at"
+    When I validate all schemas
+    Then shared properties should have errors
+
   Scenario: New object does not have description
     Given a vault is ready
     When I create a "book" object named "no-desc-book"

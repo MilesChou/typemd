@@ -34,7 +34,8 @@ type domainContext struct {
 	wikiLinkErrors []error
 
 	// wikilink results
-	wikiLinks []StoredWikiLink
+	wikiLinks    []StoredWikiLink
+	renderedBody string
 
 	// resolve results
 	resolvedID string
@@ -59,6 +60,9 @@ type domainContext struct {
 
 	// doctor results
 	doctorReport *DoctorReport
+
+	// display properties results
+	displayProps []DisplayProperty
 }
 
 func newDomainContext() *domainContext {

@@ -19,3 +19,9 @@ Feature: Tag name uniqueness
     And a raw duplicate tag named "go" exists
     When I validate name uniqueness
     Then there should be name uniqueness errors
+
+  Scenario: Duplicate tag error contains already exists message
+    Given a "tag" object named "go" exists
+    When I create a "tag" object named "go"
+    Then an error should occur
+    And the error message should contain "already exists"

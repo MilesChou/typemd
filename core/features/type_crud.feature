@@ -111,3 +111,31 @@ Feature: Type CRUD
     Given a vault is ready
     When I count objects of type "project"
     Then the count should be 0
+
+  # ── LoadType ──────────────────────────────────────────────
+
+  Scenario: Custom type emoji overrides built-in default
+    Given a vault is ready
+    And a custom tag type schema with emoji "🔖"
+    When I load type "tag"
+    Then no error should occur
+    And the loaded schema should have emoji "🔖"
+
+  Scenario: Custom tag schema without unique field defaults to false
+    Given a vault is ready
+    And a custom tag type schema without unique field
+    When I load type "tag"
+    Then no error should occur
+    And the loaded schema should have unique false
+
+  Scenario: Loading undefined type returns error
+    Given a vault is ready
+    When I load type "nonexistent"
+    Then an error should occur
+
+  Scenario: Tag type loads with default emoji and unique
+    Given a vault is ready
+    When I load type "tag"
+    Then no error should occur
+    And the loaded schema should have emoji "🏷️"
+    And the loaded schema should have unique true

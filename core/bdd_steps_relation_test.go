@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -144,6 +145,83 @@ func (dc *domainContext) listingRelationsForShouldReturnNEntries(name string, ex
 	return nil
 }
 
+func (dc *domainContext) aTypeSchemaWithARelationPropertyMissingTarget(typeName string) {
+	schema := fmt.Sprintf("name: %s\nproperties:\n  - name: ref\n    type: relation\n", typeName)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
+func (dc *domainContext) iLinkToANonExistentObjectVia(sourceName, relation string) {
+	source := dc.objects[sourceName]
+	if source == nil {
+		dc.lastErr = fmt.Errorf("object %q not found", sourceName)
+		return
+	}
+	dc.lastErr = dc.vault.LinkObjects(source.ID, relation, "person/nonexistent-01jjjjjjjjjjjjjjjjjjjjjjjj")
+}
+
+func (dc *domainContext) thePropertyOfShouldHaveNItems(prop, ownerName string, expected int) error {
+	owner := dc.objects[ownerName]
+	if owner == nil {
+		return fmt.Errorf("object %q not found", ownerName)
+	}
+	obj, err := dc.vault.GetObject(owner.ID)
+	if err != nil {
+		return fmt.Errorf("GetObject error: %v", err)
+	}
+	items, ok := obj.Properties[prop].([]any)
+	if !ok {
+		return fmt.Errorf("%s.%s type = %T, want []any", ownerName, prop, obj.Properties[prop])
+	}
+	if len(items) != expected {
+		return fmt.Errorf("%s.%s has %d items, want %d", ownerName, prop, len(items), expected)
+	}
+	return nil
+}
+
+func (dc *domainContext) aTypeSchemaWithBidirectionalRelationToMissingInverse(typeName string) {
+	schema := fmt.Sprintf(`name: %s
+properties:
+  - name: reviewer
+    type: relation
+    target: person
+    bidirectional: true
+    inverse: reviewed_articles
+`, typeName)
+	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(schema), 0644)
+}
+
+func (dc *domainContext) iBuildDisplayPropertiesFor(name string) {
+	obj := dc.objects[name]
+	if obj == nil {
+		dc.lastErr = fmt.Errorf("object %q not found", name)
+		return
+	}
+	// Re-read the object to get latest properties
+	freshObj, err := dc.vault.GetObject(obj.ID)
+	if err != nil {
+		dc.lastErr = err
+		return
+	}
+	props, err := dc.vault.BuildDisplayProperties(freshObj)
+	dc.lastErr = err
+	dc.displayProps = props
+}
+
+func (dc *domainContext) theDisplayPropertiesShouldContainAReverseRelationWithIndicator(indicator string) error {
+	if dc.displayProps == nil {
+		return fmt.Errorf("no display properties built")
+	}
+	for _, dp := range dc.displayProps {
+		if dp.IsReverse {
+			formatted := dp.Format()
+			if strings.Contains(formatted, indicator) {
+				return nil
+			}
+		}
+	}
+	return fmt.Errorf("no reverse relation with indicator %q found in display properties", indicator)
+}
+
 func initRelationSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^a vault is ready with relation schemas$`, dc.aVaultIsReadyWithRelationSchemas)
 	ctx.Step(`^I link "([^"]*)" to "([^"]*)" via "([^"]*)"$`, dc.iLinkToVia)
@@ -151,7 +229,13 @@ func initRelationSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should reference "([^"]*)"$`, dc.thePropertyOfShouldReference)
 	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should contain "([^"]*)"$`, dc.thePropertyOfShouldContain)
 	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should be empty$`, dc.thePropertyOfShouldBeEmpty)
+	ctx.Step(`^the "([^"]*)" property of "([^"]*)" should have (\d+) items$`, dc.thePropertyOfShouldHaveNItems)
 	ctx.Step(`^I unlink "([^"]*)" from "([^"]*)" via "([^"]*)" with both flag$`, dc.iUnlinkFromViaWithBothFlag)
 	ctx.Step(`^I unlink "([^"]*)" from "([^"]*)" via "([^"]*)" without both flag$`, dc.iUnlinkFromViaWithoutBothFlag)
 	ctx.Step(`^listing relations for "([^"]*)" should return (\d+) entries$`, dc.listingRelationsForShouldReturnNEntries)
+	ctx.Step(`^a type schema "([^"]*)" with a relation property missing target$`, dc.aTypeSchemaWithARelationPropertyMissingTarget)
+	ctx.Step(`^I link "([^"]*)" to a non-existent object via "([^"]*)"$`, dc.iLinkToANonExistentObjectVia)
+	ctx.Step(`^a type schema "([^"]*)" with bidirectional relation to missing inverse$`, dc.aTypeSchemaWithBidirectionalRelationToMissingInverse)
+	ctx.Step(`^I build display properties for "([^"]*)"$`, dc.iBuildDisplayPropertiesFor)
+	ctx.Step(`^the display properties should contain a reverse relation with indicator "([^"]*)"$`, dc.theDisplayPropertiesShouldContainAReverseRelationWithIndicator)
 }

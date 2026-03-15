@@ -93,6 +93,18 @@ func (tc *typeCrudContext) iAddANumberPropertyToTheSchema(propName string) {
 	})
 }
 
+func (tc *typeCrudContext) aCustomTagTypeSchemaWithEmoji(emoji string) {
+	data := fmt.Sprintf("name: tag\nemoji: %s\nproperties:\n  - name: color\n    type: string\n  - name: icon\n    type: string\n", emoji)
+	path := filepath.Join(tc.dc.vault.TypesDir(), "tag.yaml")
+	os.WriteFile(path, []byte(data), 0644)
+}
+
+func (tc *typeCrudContext) aCustomTagTypeSchemaWithoutUniqueField() {
+	data := "name: tag\nemoji: \"🏷️\"\nproperties:\n  - name: color\n    type: string\n  - name: icon\n    type: string\n"
+	path := filepath.Join(tc.dc.vault.TypesDir(), "tag.yaml")
+	os.WriteFile(path, []byte(data), 0644)
+}
+
 // ── When steps ──────────────────────────────────────────────────────────────
 
 func (tc *typeCrudContext) iSerializeTheTypeSchema() error {
@@ -253,6 +265,8 @@ func initTypeCrudSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^the schema has a name template "([^"]*)"$`, tc.theSchemaHasANameTemplate)
 	ctx.Step(`^a type schema file "([^"]*)" exists on disk$`, tc.aTypeSchemaFileExistsOnDisk)
 	ctx.Step(`^I add a "([^"]*)" number property to the schema$`, tc.iAddANumberPropertyToTheSchema)
+	ctx.Step(`^a custom tag type schema with emoji "([^"]*)"$`, tc.aCustomTagTypeSchemaWithEmoji)
+	ctx.Step(`^a custom tag type schema without unique field$`, tc.aCustomTagTypeSchemaWithoutUniqueField)
 
 	// When
 	ctx.Step(`^I serialize the type schema$`, tc.iSerializeTheTypeSchema)

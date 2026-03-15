@@ -40,6 +40,12 @@ Feature: Unique constraint on type schemas
     When I create another "book" object named "clean-code"
     Then no error should occur
 
+  Scenario: Different case names are not duplicates
+    Given a type schema "person" with unique constraint
+    And a "person" object named "john-doe" exists
+    When I create a "person" object named "John-Doe"
+    Then no error should occur
+
   # --- Validation ---
 
   Scenario: Validation passes with no duplicates on unique type

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cucumber/godog"
 )
@@ -165,6 +166,73 @@ func (dc *domainContext) theWikiLinkDisplayTextShouldBe(expected string) error {
 	return nil
 }
 
+func (dc *domainContext) bodyContainsDuplicateWikiLinksTo(sourceName, targetName string) {
+	source := dc.objects[sourceName]
+	target := dc.objects[targetName]
+	if source == nil || target == nil {
+		panic(fmt.Sprintf("object %q or %q not found", sourceName, targetName))
+	}
+	body := fmt.Sprintf("---\ntitle: %s\n---\n\nFirst [[%s]] and second [[%s]].\n", sourceName, target.ID, target.ID)
+	os.WriteFile(dc.vault.ObjectPath(source.Type, source.Filename), []byte(body), 0644)
+}
+
+func (dc *domainContext) iDeleteTheObjectFromDisk(name string) {
+	obj := dc.objects[name]
+	if obj == nil {
+		panic(fmt.Sprintf("object %q not found", name))
+	}
+	os.Remove(dc.vault.ObjectPath(obj.Type, obj.Filename))
+}
+
+func (dc *domainContext) shouldHaveADisplayPropertyFrom(targetName, propKey, sourceName string) error {
+	target := dc.objects[targetName]
+	source := dc.objects[sourceName]
+	if target == nil || source == nil {
+		return fmt.Errorf("object %q or %q not found", targetName, sourceName)
+	}
+	target, err := dc.vault.GetObject(target.ID)
+	if err != nil {
+		return fmt.Errorf("GetObject error: %v", err)
+	}
+	props, err := dc.vault.BuildDisplayProperties(target)
+	if err != nil {
+		return fmt.Errorf("BuildDisplayProperties error: %v", err)
+	}
+	for _, p := range props {
+		if p.Key == propKey && p.IsBacklink && p.FromID == source.ID {
+			return nil
+		}
+	}
+	return fmt.Errorf("no %q display property from %q found in %+v", propKey, sourceName, props)
+}
+
+func (dc *domainContext) iRenderTheBodyOf(name string) {
+	obj := dc.objects[name]
+	if obj == nil {
+		panic(fmt.Sprintf("object %q not found", name))
+	}
+	// Re-read the object from disk to get the latest body
+	obj, err := dc.vault.GetObject(obj.ID)
+	if err != nil {
+		panic(fmt.Sprintf("GetObject %q failed: %v", name, err))
+	}
+	dc.renderedBody = RenderWikiLinks(obj.Body)
+}
+
+func (dc *domainContext) theRenderedBodyShouldContain(expected string) error {
+	if !strings.Contains(dc.renderedBody, expected) {
+		return fmt.Errorf("rendered body %q does not contain %q", dc.renderedBody, expected)
+	}
+	return nil
+}
+
+func (dc *domainContext) theRenderedBodyShouldNotContain(unexpected string) error {
+	if strings.Contains(dc.renderedBody, unexpected) {
+		return fmt.Errorf("rendered body %q should not contain %q", dc.renderedBody, unexpected)
+	}
+	return nil
+}
+
 func initWikiLinkSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^a vault is ready with note schemas$`, dc.aVaultIsReadyWithNoteSchemas)
 	ctx.Step(`^"([^"]*)" body contains a wiki-link to "([^"]*)"$`, dc.bodyContainsAWikiLinkTo)
@@ -178,4 +246,10 @@ func initWikiLinkSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^"([^"]*)" wiki-link should point to "([^"]*)"$`, dc.wikiLinkShouldPointTo)
 	ctx.Step(`^"([^"]*)" should have (\d+) backlinks$`, dc.shouldHaveNBacklinks)
 	ctx.Step(`^the wiki-link display text should be "([^"]*)"$`, dc.theWikiLinkDisplayTextShouldBe)
+	ctx.Step(`^"([^"]*)" body contains duplicate wiki-links to "([^"]*)"$`, dc.bodyContainsDuplicateWikiLinksTo)
+	ctx.Step(`^I delete the object "([^"]*)" from disk$`, dc.iDeleteTheObjectFromDisk)
+	ctx.Step(`^"([^"]*)" should have a "([^"]*)" display property from "([^"]*)"$`, dc.shouldHaveADisplayPropertyFrom)
+	ctx.Step(`^I render the body of "([^"]*)"$`, dc.iRenderTheBodyOf)
+	ctx.Step(`^the rendered body should contain "([^"]*)"$`, dc.theRenderedBodyShouldContain)
+	ctx.Step(`^the rendered body should not contain "([^"]*)"$`, dc.theRenderedBodyShouldNotContain)
 }

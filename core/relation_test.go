@@ -170,17 +170,17 @@ func TestVault_LinkObjects_SingleValueOverwrite(t *testing.T) {
 func TestVault_LinkObjects_DuplicateMultiple(t *testing.T) {
 	v := setupRelationTestVault(t)
 
-	book, _ := v.NewObject("book", "test", "")
 	alan, _ := v.NewObject("person", "alan", "")
+	book, _ := v.NewObject("book", "test", "")
 
-	v.LinkObjects(book.ID, "author", alan.ID)
+	v.LinkObjects(alan.ID, "books", book.ID)
 
 	// person.books is multiple, linking same book again should error
-	// because the inverse side already has this entry
-	err := v.LinkObjects(book.ID, "author", alan.ID)
-	// Note: single-value overwrite on book side is fine,
-	// but inverse side should detect duplicate
-	_ = err
+	// because the value already exists in the multi-value relation
+	err := v.LinkObjects(alan.ID, "books", book.ID)
+	if err == nil {
+		t.Fatal("expected error for duplicate link on multi-value relation, got nil")
+	}
 }
 
 func TestVault_UnlinkObjects_SingleValue(t *testing.T) {

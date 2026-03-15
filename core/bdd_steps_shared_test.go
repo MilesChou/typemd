@@ -236,6 +236,16 @@ properties:
 	os.WriteFile(filepath.Join(dc.vault.TypesDir(), typeName+".yaml"), []byte(content), 0644)
 }
 
+func (dc *domainContext) theLoadedSchemaShouldHaveEmoji(expected string) error {
+	if dc.loadedSchema == nil {
+		return fmt.Errorf("no schema loaded")
+	}
+	if dc.loadedSchema.Emoji != expected {
+		return fmt.Errorf("expected emoji %q, got %q", expected, dc.loadedSchema.Emoji)
+	}
+	return nil
+}
+
 func (dc *domainContext) theLoadedPropertyAtIndexShouldBe(index int, expectedName string) error {
 	if dc.loadedSchema == nil {
 		return fmt.Errorf("loaded schema is nil")
@@ -275,5 +285,6 @@ func initSharedSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^the loaded property "([^"]*)" should have emoji "([^"]*)"$`, dc.theLoadedPropertyShouldHaveEmoji)
 	ctx.Step(`^the loaded property "([^"]*)" should have pin (\d+)$`, dc.theLoadedPropertyShouldHavePin)
 	ctx.Step(`^a type schema "([^"]*)" with mixed use and name properties$`, dc.aTypeSchemaWithMixedUseAndNameProperties)
+	ctx.Step(`^the loaded schema should have emoji "([^"]*)"$`, dc.theLoadedSchemaShouldHaveEmoji)
 	ctx.Step(`^the loaded property at index (\d+) should be "([^"]*)"$`, dc.theLoadedPropertyAtIndexShouldBe)
 }
