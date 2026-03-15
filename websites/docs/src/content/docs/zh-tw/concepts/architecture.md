@@ -74,9 +74,9 @@ vault.Events    // EventDispatcher（訂閱變更）
 
 ### 用例層
 
-**ObjectService** 處理所有寫入操作：建立物件、儲存變更、設定屬性、連結 / 斷開關係。它協調領域實體與 Repository 和 Index，並在操作成功後派發領域事件。
+**ObjectService** 處理所有寫入操作：建立物件、儲存變更、設定屬性、連結 / 斷開關聯。它協調領域實體與 Repository 和 Index，並在操作成功後派發領域事件。
 
-**QueryService** 處理所有讀取操作：依 ID 取得物件、解析縮寫 ID、依條件篩選、全文搜尋、列出關係和反向連結、組裝顯示屬性。
+**QueryService** 處理所有讀取操作：依 ID 取得物件、解析縮寫 ID、依條件篩選、全文搜尋、列出關聯和反向連結、組裝顯示屬性。
 
 **Projector** 將檔案來源（source of truth）同步到搜尋索引。它透過 Repository 走訪所有物件檔案，套用遷移，並 upsert 到索引中。
 

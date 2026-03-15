@@ -190,7 +190,7 @@ The TUI automatically saves your session state to `.typemd/tui-state.yaml` when 
 - **Properties visibility** — whether the properties panel was shown
 - **Scroll offset** — vertical scroll position in the object list
 
-If the previously selected object was deleted, the TUI falls back to the first object in the same type group, then to the first object overall. Focus always starts on the sidebar.
+If the previously selected object was deleted, the TUI falls back to the first object in the same type group, then to the first object overall. If there is a saved focus state, the TUI restores it; otherwise it defaults to the sidebar.
 
 Search state is not persisted — each session starts with a fresh view.
 

@@ -15,8 +15,6 @@ When created via the CLI (`tmd object create`), a 26-character lowercase ULID is
 
 All objects have five system properties managed by TypeMD:
 
-| Property | Description |
-|----------|-------------|
 | Property | Description | Mutable |
 |----------|-------------|---------|
 | `name` | Display name, auto-populated from the slug on creation | User-authored |
@@ -35,6 +33,7 @@ vault/
 │   ├── types/              # user-defined type schemas (YAML)
 │   │   ├── book.yaml       # example: you create this
 │   │   └── person.yaml     # example: you create this
+│   ├── properties.yaml     # shared property definitions (optional)
 │   ├── index.db            # SQLite index (auto-updated)
 │   └── tui-state.yaml      # TUI session state (auto-saved)
 ├── templates/              # object templates by type (optional)

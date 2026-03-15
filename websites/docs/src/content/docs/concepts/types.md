@@ -107,6 +107,10 @@ Each property in a Type schema has a data type:
 
 For relation properties, see the [Relations](/concepts/relations) page for details on `target`, `bidirectional`, `inverse`, and `multiple` fields.
 
+## Shared Properties
+
+If the same property appears in multiple types (e.g., `due_date` in both `project` and `task`), you can define it once in `.typemd/properties.yaml` and reference it with the `use` keyword. See [Shared Properties](/concepts/shared-properties) for details.
+
 ## Validation
 
 TypeMD uses lenient validation:

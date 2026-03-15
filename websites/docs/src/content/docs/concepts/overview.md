@@ -45,7 +45,7 @@ A ULID (Universally Unique Lexicographically Sortable Identifier) is a 26-charac
 
 ## Wiki-link
 
-A Wiki-link is an inline reference to another Object using `[[type/slug]]` syntax in the Markdown body. TypeMD tracks these links and their backlinks, so you can discover connections between Objects.
+A Wiki-link is an inline reference to another Object using `[[type/slug-ulid]]` syntax in the Markdown body. The target must be a full Object ID including the ULID suffix. TypeMD tracks these links and their backlinks, so you can discover connections between Objects.
 
 [Learn more about Wiki-links →](/concepts/wiki-links)
 

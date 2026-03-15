@@ -90,6 +90,10 @@ Type schema 中每個屬性都有一個資料型別：
 
 Relation 屬性的 `target`、`bidirectional`、`inverse` 和 `multiple` 欄位，請參閱 [Relation](/zh-tw/concepts/relations) 頁面。
 
+## Shared Properties
+
+如果同一個屬性出現在多個 type 中（例如 `due_date` 同時在 `project` 和 `task` 裡），你可以在 `.typemd/properties.yaml` 中定義一次，然後用 `use` 關鍵字引用。詳情請參閱 [Shared Properties](/zh-tw/concepts/shared-properties)。
+
 ## 驗證
 
 TypeMD 採用寬鬆驗證：

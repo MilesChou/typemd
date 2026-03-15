@@ -14,7 +14,7 @@ The Property struct SHALL support an optional `pin` field that stores a positive
 
 ### Requirement: Pin values must be positive integers
 
-When a property has a pin value set, it SHALL be a positive integer (greater than zero). Schema validation SHALL reject zero or negative pin values.
+When a property has a pin value set, it SHALL be a positive integer (greater than zero). Schema validation SHALL reject negative pin values.
 
 #### Scenario: Positive pin value accepted
 - **WHEN** a type schema property has `pin: 3`

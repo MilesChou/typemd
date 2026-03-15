@@ -91,7 +91,7 @@ When rendering markdown body for display, the system SHALL replace wiki-link syn
 
 ### Requirement: Broken wiki-links are detected by validation
 
-The `tmd validate` command SHALL report wiki-links whose targets do not resolve to existing objects.
+The `tmd type validate` command SHALL report wiki-links whose targets do not resolve to existing objects.
 
 #### Scenario: Broken link is reported
 
