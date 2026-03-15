@@ -1,11 +1,11 @@
 ---
 name: consistency-check
-description: Cross-reference BDD tests, OpenSpec specs, and documentation to find contradictions and terminology inconsistencies. Use when the user mentions "consistency check", "cross-reference", "do BDD and spec align", "are docs and tests contradicting", "is terminology consistent", "check specs", "spec and feature match". Also useful before releases, after refactoring, or when suspecting a concept is described differently across sources.
+description: Cross-reference BDD tests, OpenSpec specs, and documentation to find contradictions and terminology inconsistencies, then optionally triage coverage gaps by verifying Go source code. Use when the user mentions "consistency check", "cross-reference", "do BDD and spec align", "are docs and tests contradicting", "is terminology consistent", "check specs", "spec and feature match", "triage coverage gaps", "verify implementation matches spec". Also useful before releases, after refactoring, or when suspecting a concept is described differently across sources.
 ---
 
 # Consistency Check
 
-Cross-reference BDD feature files (`.feature`), OpenSpec specifications (`spec.md`), and documentation (docs) to surface scenario contradictions and terminology inconsistencies. This skill produces a report — it does not modify any files.
+Cross-reference BDD feature files (`.feature`), OpenSpec specifications (`spec.md`), and documentation (docs) to surface scenario contradictions and terminology inconsistencies. Optionally triage coverage gaps by verifying Go source code to classify them as implemented-but-untested, not-implemented, or implemented-differently.
 
 ## Why This Skill Exists
 
@@ -38,8 +38,10 @@ digraph consistency_check {
   scenario [label="3. Compare scenarios\nfind behavioral contradictions"];
   terminology [label="4. Compare terminology\nfind naming inconsistencies"];
   report [label="5. Produce report"];
+  triage [label="6. Triage coverage gaps\n(optional) verify Go code\nclassify A/B/C" style=dashed];
 
   scope -> collect -> scenario -> terminology -> report;
+  report -> triage [style=dashed label="user requests"];
 }
 ```
 
@@ -166,11 +168,11 @@ Date: [date]
 
 ### [Concept Area Name]
 
-| Severity | Source A | Source B | Contradiction |
-|----------|----------|----------|---------------|
-| HIGH | OpenSpec: object-relations/spec.md #Req3 | BDD: relation.feature | OpenSpec requires X but BDD has no corresponding scenario |
-| MEDIUM | Docs: relations.md | BDD: relation.feature | Docs say you can Y, but BDD asserts result is Z |
-| LOW | BDD: relation.feature Scenario: ... | OpenSpec | BDD tests behavior not recorded in OpenSpec |
+| Category | Source A | Source B | Finding |
+|----------|----------|----------|---------|
+| CODE | Docs: relations.md | BDD: relation.feature | Docs say you can Y, but BDD asserts result is Z — code behavior may need to change |
+| BDD | OpenSpec: object-relations/spec.md #Req3 | BDD: relation.feature | OpenSpec requires X but BDD has no corresponding scenario |
+| TEXT | BDD: relation.feature Scenario: ... | OpenSpec | BDD tests behavior not recorded in OpenSpec — update spec to match |
 
 ### [Next Concept Area]
 ...
@@ -183,17 +185,79 @@ Date: [date]
 | Wiki-link | wikilink.feature:L3 | "wikilink" | wiki-links/spec.md:L1 | "wiki-link" | Unify to "wiki-link" |
 ```
 
-#### Severity Definitions
+#### Action Categories
 
-| Severity | Definition |
-|----------|------------|
-| **HIGH** | Behavioral contradiction: two sources describe the same behavior in conflicting ways |
-| **MEDIUM** | Coverage gap: one source defines behavior that another source doesn't mention at all |
-| **LOW** | Detail variance: different phrasing but not semantically contradictory, or pure terminology inconsistency |
+Classify each finding by what it takes to fix, not by how "severe" it sounds:
+
+| Category | Definition | Cost |
+|----------|------------|------|
+| **TEXT** | Spec text error, docs missing content, terminology inconsistency, translation gap | Low — edit files |
+| **BDD** | OpenSpec requirement without corresponding BDD scenario (behavior may or may not be implemented) | Medium — write test + step definitions |
+| **CODE** | Two sources describe the same behavior in conflicting ways, implying code may need to change | High — investigate, possibly change program behavior |
+
+### 5a. Decide Next Action
+
+After presenting the report, summarize the counts by category and ask the user:
+
+1. **TEXT + BDD items** — "Want to fix these now?" These are safe to fix immediately: text edits have near-zero risk, and adding BDD scenarios doesn't change program behavior.
+2. **CODE items** — "Want to create issues for these?" These require investigation into what the code actually does, and may need behavior changes. Better tracked as issues.
+
+If the user wants to fix TEXT items now, use parallel agents to edit spec/docs files directly.
+
+If the user wants to address BDD items, proceed to Step 6 (triage) first to determine whether each gap is "implemented but untested" (write BDD) or "not implemented" (reclassify as CODE → create issue).
+
+### 6. Triage Coverage Gaps (optional)
+
+When the report contains BDD category items (OpenSpec requirements without BDD scenarios), the user may ask to triage them. This step verifies whether the Go code actually implements each requirement, because a missing BDD scenario doesn't necessarily mean a missing feature.
+
+#### Why triage matters
+
+A coverage gap has three possible realities:
+
+| Classification | Meaning | Action |
+|---------------|---------|--------|
+| **A — Implemented, untested** | Code implements the behavior but no BDD scenario covers it | Write BDD scenario to lock down existing behavior |
+| **B — Not implemented** | Code does not implement this requirement at all | Decide: implement the feature, or update/remove the OpenSpec requirement |
+| **C — Implemented differently** | Code exists but behaves differently from what OpenSpec says | This is the highest risk — investigate and fix either the code or the spec |
+
+#### How to triage
+
+For each MEDIUM coverage gap from the report:
+
+1. **Read the Go source code** that handles the relevant behavior. Use Grep to find the function or method mentioned in the OpenSpec requirement (e.g., `LinkObjects`, `UnlinkObjects`, `SyncWikiLinks`).
+2. **Trace the code path** described in the OpenSpec scenario. Does the code handle this case? What does it return?
+3. **Classify as A, B, or C** based on what the code actually does.
+
+Use parallel Explore agents to triage multiple concept areas simultaneously.
+
+#### Triage report format
+
+Append the triage results to the consistency check report:
+
+```markdown
+## Coverage Gap Triage
+
+### [Concept Area Name]
+
+| OpenSpec Requirement | Classification | Evidence | Action |
+|---------------------|---------------|----------|--------|
+| "Duplicate link is rejected" | A — Implemented | `object_service.go:L142` returns `ErrDuplicateLink` | Write BDD scenario |
+| "Unlink one from multiple-value" | B — Not implemented | `object_service.go` UnlinkObjects only clears the entire property | Create issue or update spec |
+| "Reverse relations displayed" | C — Different behavior | Code uses `→` but spec says `←` for reverse | Investigate: fix code or spec |
+```
+
+#### Recommended priority
+
+Triage in this order (highest risk first):
+
+1. **HIGH severity items** from the report — these are known contradictions, verify the code behavior
+2. **Relation gaps** — error handling paths are most likely to have A/B/C mix
+3. **Wiki-link gaps** — deduplication and cleanup are often edge cases that may not be implemented
+4. **Other MEDIUM gaps** — remaining items
 
 ## Important Notes
 
-- This skill only produces a report. It does not modify any files. The user decides follow-up actions.
+- Steps 1–5 produce a read-only report. Step 6 (triage) is optional and also read-only — it classifies gaps but does not modify files. The user decides follow-up actions.
 - OpenSpec is the authoritative source for requirements. When OpenSpec conflicts with BDD/docs, usually BDD/docs need updating — but OpenSpec could also be outdated. The report should mention both possibilities.
 - BDD scenario names don't need to exactly match OpenSpec requirement names. Semantic correspondence is what matters.
 - Both en and zh-tw docs should be checked. Translation consistency between en/zh-tw is also in scope.
