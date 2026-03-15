@@ -90,4 +90,4 @@ TypeMD 採用寬鬆驗證：
 - `date` 必須是 YYYY-MM-DD 格式
 - `url` 必須以 http:// 或 https:// 開頭
 - `relation` 的目標會檢查 Type 是否正確
-- 屬性名稱 `name`、`description`、`created_at`、`updated_at` 和 `tags` 為[系統屬性](/zh-tw/advanced/file-structure#系統屬性)保留，不能在 type schema 中使用
+- 屬性名稱 `description`、`created_at`、`updated_at` 和 `tags` 為[系統屬性](/zh-tw/advanced/file-structure#系統屬性)保留，不能在 type schema 中使用。`name` 可以出現在 `properties` 中，但只允許搭配 `template` 欄位（用於 [name template](/zh-tw/basics/templates#name-template)）。

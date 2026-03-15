@@ -9,7 +9,7 @@ Properties are named fields on an Object, defined by its [Type schema](/concepts
 
 ## System Properties
 
-Every Object has five system properties managed by TypeMD. These provide the baseline metadata that every knowledge management tool needs — identity, description, temporal tracking, and categorization — without requiring users to define them in every type schema.
+Every Object supports five system properties managed by TypeMD. These provide the baseline metadata that every knowledge management tool needs — identity, description, temporal tracking, and categorization — without requiring users to define them in every type schema. Not all system properties are present in every Object's frontmatter: `name` is auto-populated on creation, `created_at` and `updated_at` are set when using the CLI, while `description` and `tags` only appear when explicitly set by the user.
 
 | Property | Description | Mutability | Why |
 |----------|-------------|------------|-----|

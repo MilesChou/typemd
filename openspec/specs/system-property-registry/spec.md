@@ -108,6 +108,40 @@ During property filtering in `SyncIndex`, all system properties present in the o
 - **AND** the type schema does not define these properties
 - **THEN** after sync, the indexed properties SHALL include `description`, `created_at` and `updated_at`
 
+### Requirement: System properties are classified by mutability
+
+Each system property SHALL be classified as either **user-authored** (mutable by user or template) or **auto-managed** (immutable, always reflects actual system values). The `IsImmutableSystemProperty(name)` function SHALL return `true` for auto-managed properties (`created_at`, `updated_at`) and `false` for user-authored properties (`name`, `description`, `tags`) and non-system properties.
+
+#### Scenario: Auto-managed properties are immutable
+
+- **WHEN** `IsImmutableSystemProperty("created_at")` is called
+- **THEN** it SHALL return `true`
+
+#### Scenario: Auto-managed property updated_at is immutable
+
+- **WHEN** `IsImmutableSystemProperty("updated_at")` is called
+- **THEN** it SHALL return `true`
+
+#### Scenario: User-authored properties are not immutable
+
+- **WHEN** `IsImmutableSystemProperty("name")` is called
+- **THEN** it SHALL return `false`
+
+#### Scenario: User-authored property description is not immutable
+
+- **WHEN** `IsImmutableSystemProperty("description")` is called
+- **THEN** it SHALL return `false`
+
+#### Scenario: User-authored property tags is not immutable
+
+- **WHEN** `IsImmutableSystemProperty("tags")` is called
+- **THEN** it SHALL return `false`
+
+#### Scenario: Non-system properties are not immutable
+
+- **WHEN** `IsImmutableSystemProperty("title")` is called
+- **THEN** it SHALL return `false`
+
 ### Requirement: Frontmatter orders system properties first
 
 `OrderedPropKeys` SHALL place system properties before schema-defined properties, in registry order (name, description, created_at, updated_at, tags). Schema-defined properties follow in schema order. Extra properties are appended alphabetically.

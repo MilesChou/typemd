@@ -117,6 +117,22 @@ The system SHALL provide `ListRelations` to return all relations where the objec
 - **WHEN** an object has no relations
 - **THEN** listing relations returns an empty list
 
+### Requirement: Tags system property uses the relation mechanism
+
+The `tags` system property SHALL use the same relation linking and unlinking mechanism as schema-defined relation properties. Linking a tag to an object via the `tags` property SHALL follow the same `LinkObjects` path. Unlinking SHALL follow the same `UnlinkObjects` path.
+
+#### Scenario: Link tag to object via tags system property
+
+- **WHEN** a tag object "go" exists and a book object "golang-book" exists
+- **AND** "golang-book" is linked to "go" via the `tags` property
+- **THEN** the book's `tags` property SHALL contain a reference to the tag
+
+#### Scenario: Unlink tag from object via tags system property
+
+- **WHEN** a book "golang-book" has tag "go" linked via `tags`
+- **AND** "golang-book" is unlinked from "go" via `tags` without the `both` flag
+- **THEN** the book's `tags` property SHALL be empty
+
 ### Requirement: Reverse relations are displayed in object detail
 
 The system SHALL display reverse relations (where the object is the `to_id`) in the object's display properties, shown after schema-defined properties with a `←` indicator.

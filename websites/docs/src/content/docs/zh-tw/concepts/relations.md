@@ -74,4 +74,4 @@ tmd relation unlink book/golang-in-action author person/alan-donovan --both
 
 ## Relation vs. Wiki-link
 
-TypeMD 也支援 [wiki-link](/zh-tw/concepts/wiki-links)（`[[type/slug]]`）來做非正式的行內引用。Relation 是結構化、由 schema 定義的；wiki-link 是自由格式、寫在 Markdown 內文中的。詳細比較請見 [Wiki-link](/zh-tw/concepts/wiki-links) 頁面。
+TypeMD 也支援[連結](/zh-tw/concepts/links)（`[[type/slug]]`）來做非正式的行內引用。Relation 是結構化、由 schema 定義的；連結是自由格式、寫在 Markdown 內文中的。詳細比較請見[連結](/zh-tw/concepts/links)頁面。

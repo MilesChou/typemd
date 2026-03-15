@@ -74,4 +74,4 @@ Use `--both` to remove the inverse side as well. This only takes effect when the
 
 ## Relations vs. wiki-links
 
-TypeMD also supports [wiki-links](/concepts/wiki-links) (`[[type/slug]]`) for informal inline references. Relations are structured and schema-defined; wiki-links are freeform and live in the Markdown body. See the [Wiki-links](/concepts/wiki-links) page for a detailed comparison.
+TypeMD also supports [links](/concepts/links) (`[[type/slug]]`) for informal inline references. Relations are structured and schema-defined; links are freeform and live in the Markdown body. See the [Links](/concepts/links) page for a detailed comparison.
