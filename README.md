@@ -211,9 +211,9 @@ The properties panel is hidden by default and can be toggled with `p`. On narrow
 
 Navigate to `+ New Type` at the bottom of the sidebar and press `Enter` to create a new type. A creation form appears in the title panel with fields for emoji, name, and plural — press `Tab` to cycle between fields.
 
-Moving the cursor to a type group header automatically shows the **type editor** in the right panel, where you can edit type metadata (plural, emoji, unique), manage properties (add, delete, reorder, pin), and delete the type. The type editor has its own keybindings shown in the status bar.
+Moving the cursor to a type group header automatically shows the **type editor** in the right panel, where you can edit type metadata (plural, emoji, unique), manage properties (add, delete, reorder, pin), manage templates (view, create, edit, delete), and delete the type. The type editor has its own keybindings shown in the status bar. Pressing Enter on a template opens the **template editor**, where you can view and edit the template body and properties inline.
 
-The status bar shows the current mode: `[VIEW]` for normal navigation, `[EDIT]` when editing is active, `[TYPE]` when the type editor is focused, and `[READONLY]` when launched with `--readonly`.
+The status bar shows the current mode: `[VIEW]` for normal navigation, `[EDIT]` when editing is active, `[TYPE]` when the type editor is focused, `[TEMPLATE]` when viewing/editing a template, and `[READONLY]` when launched with `--readonly`.
 
 When `--readonly` is active, the `e` key is disabled, no write operations are performed, and the help popup hides edit-related keybindings.
 
