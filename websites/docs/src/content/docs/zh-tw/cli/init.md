@@ -37,6 +37,6 @@ tmd init --no-starters
 
 `tmd init` 會自動建立 `.typemd/config.yaml` 並設定 `cli.default_type: page`。內建的 `page` type 作為快速建立 object 的預設 type。
 
-這讓你可以直接執行 `tmd object create "Some Thought"` 而不需指定 type。詳見 [tmd object create](/zh-tw/cli/create)。
+這讓你可以直接執行 `tmd object create "Some Thought"` 而不需指定 type。詳見 [tmd object create](/zh-tw/cli/create)。若要之後更改預設 type，使用 [`tmd config set`](/zh-tw/cli/config/)。
 
 在已初始化的 vault 上執行 `tmd init` 會回傳錯誤。

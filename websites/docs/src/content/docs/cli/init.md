@@ -37,6 +37,6 @@ tmd init --no-starters
 
 `tmd init` always creates `.typemd/config.yaml` with `cli.default_type: page`. The built-in `page` type serves as the default for quick object creation.
 
-This enables `tmd object create "Some Thought"` without specifying a type. See [tmd object create](/cli/create) for details.
+This enables `tmd object create "Some Thought"` without specifying a type. See [tmd object create](/cli/create) for details. To change the default type later, use [`tmd config set`](/cli/config/).
 
 Running `tmd init` on an already-initialized vault will return an error.
