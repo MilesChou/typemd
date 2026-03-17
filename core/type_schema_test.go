@@ -1099,3 +1099,138 @@ func TestValidateSchema_NameWithNoFieldsRejected(t *testing.T) {
 	}
 }
 
+// ── Schema version tests ────────────────────────────────────────────────────
+
+func TestTypeSchema_VersionField(t *testing.T) {
+	data := []byte(`
+name: book
+version: "2.3"
+properties:
+  - name: title
+    type: string
+`)
+	var schema TypeSchema
+	if err := yaml.Unmarshal(data, &schema); err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+	if schema.Version != "2.3" {
+		t.Errorf("Version = %q, want %q", schema.Version, "2.3")
+	}
+}
+
+func TestTypeSchema_VersionOmittedDefaultsToEmpty(t *testing.T) {
+	data := []byte(`
+name: book
+properties:
+  - name: title
+    type: string
+`)
+	var schema TypeSchema
+	if err := yaml.Unmarshal(data, &schema); err != nil {
+		t.Fatalf("Unmarshal error = %v", err)
+	}
+	if schema.Version != "" {
+		t.Errorf("Version = %q, want empty string", schema.Version)
+	}
+}
+
+func TestTypeSchema_DefaultVersionOmittedFromYAML(t *testing.T) {
+	schema := &TypeSchema{Name: "note", Version: "0.0"}
+	data, err := MarshalTypeSchema(schema)
+	if err != nil {
+		t.Fatalf("MarshalTypeSchema error = %v", err)
+	}
+	if strings.Contains(string(data), "version:") {
+		t.Errorf("expected version to be omitted from YAML, got:\n%s", string(data))
+	}
+}
+
+func TestTypeSchema_EmptyVersionOmittedFromYAML(t *testing.T) {
+	schema := &TypeSchema{Name: "note"}
+	data, err := MarshalTypeSchema(schema)
+	if err != nil {
+		t.Fatalf("MarshalTypeSchema error = %v", err)
+	}
+	if strings.Contains(string(data), "version:") {
+		t.Errorf("expected version to be omitted from YAML, got:\n%s", string(data))
+	}
+}
+
+func TestTypeSchema_VersionPresent(t *testing.T) {
+	schema := &TypeSchema{Name: "book", Version: "1.0"}
+	data, err := MarshalTypeSchema(schema)
+	if err != nil {
+		t.Fatalf("MarshalTypeSchema error = %v", err)
+	}
+	if !strings.Contains(string(data), `version: "1.0"`) {
+		t.Errorf("expected YAML to contain 'version: \"1.0\"', got:\n%s", string(data))
+	}
+}
+
+func TestValidateSchema_ValidVersionAccepted(t *testing.T) {
+	tests := []string{"0.0", "1.0", "2.3", "10.99"}
+	for _, v := range tests {
+		schema := &TypeSchema{
+			Name:    "book",
+			Version: v,
+			Properties: []Property{
+				{Name: "title", Type: "string"},
+			},
+		}
+		errs := ValidateSchema(schema)
+		if len(errs) != 0 {
+			t.Errorf("expected no errors for version %q, got %v", v, errs)
+		}
+	}
+}
+
+func TestValidateSchema_InvalidVersionRejected(t *testing.T) {
+	tests := []struct {
+		version string
+		desc    string
+	}{
+		{"1", "single number"},
+		{"1.0.0", "three segments"},
+		{"01.0", "leading zero in major"},
+		{"0.01", "leading zero in minor"},
+		{"-1.0", "negative major"},
+		{"abc", "non-numeric"},
+		{"1.x", "non-numeric minor"},
+	}
+	for _, tc := range tests {
+		schema := &TypeSchema{Name: "bad", Version: tc.version}
+		errs := ValidateSchema(schema)
+		found := false
+		for _, err := range errs {
+			if strings.Contains(err.Error(), "major.minor") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("version %q (%s): expected error mentioning 'major.minor', got %v", tc.version, tc.desc, errs)
+		}
+	}
+}
+
+func TestCompareVersions(t *testing.T) {
+	tests := []struct {
+		a, b string
+		want int
+	}{
+		{"2.0", "1.3", 1},
+		{"1.2", "1.1", 1},
+		{"1.1", "1.1", 0},
+		{"0.1", "1.0", -1},
+		{"0.0", "0.0", 0},
+		{"0.0", "0.1", -1},
+		{"10.0", "9.99", 1},
+	}
+	for _, tc := range tests {
+		got := CompareVersions(tc.a, tc.b)
+		if got != tc.want {
+			t.Errorf("CompareVersions(%q, %q) = %d, want %d", tc.a, tc.b, got, tc.want)
+		}
+	}
+}
+

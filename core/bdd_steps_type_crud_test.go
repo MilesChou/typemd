@@ -13,11 +13,12 @@ import (
 // ── Type CRUD step state ────────────────────────────────────────────────────
 
 type typeCrudContext struct {
-	dc             *domainContext
-	schema         *TypeSchema
-	yamlOutput     []byte
+	dc              *domainContext
+	schema          *TypeSchema
+	yamlOutput      []byte
 	roundTripSchema *TypeSchema
-	objectCount    int
+	objectCount     int
+	validationErrs  []error
 }
 
 func newTypeCrudContext(dc *domainContext) *typeCrudContext {
@@ -120,16 +121,22 @@ func (tc *typeCrudContext) iDeserializeTheYAMLOutputBackToATypeSchema() error {
 		Plural     string     `yaml:"plural,omitempty"`
 		Emoji      string     `yaml:"emoji,omitempty"`
 		Unique     bool       `yaml:"unique,omitempty"`
+		Version    string     `yaml:"version,omitempty"`
 		Properties []Property `yaml:"properties"`
 	}
 	if err := yaml.Unmarshal(tc.yamlOutput, &raw); err != nil {
 		return err
+	}
+	version := raw.Version
+	if version == "" {
+		version = DefaultSchemaVersion
 	}
 	schema := &TypeSchema{
 		Name:       raw.Name,
 		Plural:     raw.Plural,
 		Emoji:      raw.Emoji,
 		Unique:     raw.Unique,
+		Version:    version,
 		Properties: raw.Properties,
 	}
 	// Extract NameTemplate like GetSchema does
@@ -250,6 +257,50 @@ func (tc *typeCrudContext) theCountShouldBe(expected int) error {
 	return nil
 }
 
+// ── Version steps ───────────────────────────────────────────────────────────
+
+func (tc *typeCrudContext) theSchemaHasVersion(version string) {
+	tc.schema.Version = version
+}
+
+func (tc *typeCrudContext) iValidateTheTypeSchema() {
+	tc.validationErrs = ValidateSchema(tc.schema)
+}
+
+func (tc *typeCrudContext) theRoundTripSchemaVersionShouldBe(expected string) error {
+	if tc.roundTripSchema.Version != expected {
+		return fmt.Errorf("expected version %q, got %q", expected, tc.roundTripSchema.Version)
+	}
+	return nil
+}
+
+func (tc *typeCrudContext) noSchemaValidationErrorsShouldOccur() error {
+	if len(tc.validationErrs) != 0 {
+		return fmt.Errorf("expected no validation errors, got %v", tc.validationErrs)
+	}
+	return nil
+}
+
+func (tc *typeCrudContext) aSchemaValidationErrorShouldMention(substr string) error {
+	if len(tc.validationErrs) == 0 {
+		return fmt.Errorf("expected validation errors, got none")
+	}
+	for _, err := range tc.validationErrs {
+		if strings.Contains(err.Error(), substr) {
+			return nil
+		}
+	}
+	return fmt.Errorf("expected error mentioning %q, got %v", substr, tc.validationErrs)
+}
+
+func (tc *typeCrudContext) comparingVersionWithShouldReturn(a, b string, expected int) error {
+	result := CompareVersions(a, b)
+	if result != expected {
+		return fmt.Errorf("CompareVersions(%q, %q) = %d, want %d", a, b, result, expected)
+	}
+	return nil
+}
+
 // ── Init ────────────────────────────────────────────────────────────────────
 
 func initTypeCrudSteps(ctx *godog.ScenarioContext, dc *domainContext) {
@@ -287,4 +338,12 @@ func initTypeCrudSteps(ctx *godog.ScenarioContext, dc *domainContext) {
 	ctx.Step(`^loading type "([^"]*)" should return a schema with (\d+) propert(?:y|ies)$`, tc.loadingTypeShouldReturnASchemaWithNProperties)
 	ctx.Step(`^the error message should contain "([^"]*)"$`, tc.theErrorMessageShouldContain)
 	ctx.Step(`^the count should be (\d+)$`, tc.theCountShouldBe)
+
+	// Version steps
+	ctx.Step(`^the schema has version "([^"]*)"$`, tc.theSchemaHasVersion)
+	ctx.Step(`^I validate the type schema$`, tc.iValidateTheTypeSchema)
+	ctx.Step(`^the round-trip schema version should be "([^"]*)"$`, tc.theRoundTripSchemaVersionShouldBe)
+	ctx.Step(`^no schema validation errors should occur$`, tc.noSchemaValidationErrorsShouldOccur)
+	ctx.Step(`^a schema validation error should mention "([^"]*)"$`, tc.aSchemaValidationErrorShouldMention)
+	ctx.Step(`^comparing version "([^"]*)" with "([^"]*)" should return (-?\d+)$`, tc.comparingVersionWithShouldReturn)
 }
