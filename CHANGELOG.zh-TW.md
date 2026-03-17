@@ -4,6 +4,25 @@
 
 格式依循 [Keep a Changelog](https://keepachangelog.com/)。
 
+## [v0.4.0] - 2026-03-18
+
+### 新增
+
+- 內建 Page 型別 — `page`（📄）為新的內建型別，無需 YAML 檔案即可使用，適合自由格式內容 (#245)
+- Vault 健康檢查 — `tmd doctor` 掃描孤立目錄、遺失型別等 vault 完整性問題 (#19)
+- Vault 設定指令 — `tmd config get/set/list` 管理 `.typemd/config.yaml` 中的持久設定；`cli.default_type` 設定物件建立時的預設型別 (#241)
+- 入門型別範本 — `tmd init` 提供可選的入門 schema（idea 💡、note 📝、book 📚）快速建立 vault (#235)
+- 型別 Schema 版本號 — `version` 欄位（semver `"major.minor"`）追蹤 schema 演進 (#45)
+- 型別 Schema 色彩 — `color` 欄位支援預設色名與 hex 色碼，用於視覺主題 (#228)
+- 型別與屬性描述 — 型別 schema 與屬性新增 `description` 欄位，用於行內文件 (#228)
+- TUI 範本管理 — 在型別編輯器中瀏覽、編輯、建立和刪除物件範本 (#250)
+- TUI 物件建立精靈 — 標題面板內行內輸入，支援即時範本預覽與智慧 slug 轉換 (#229, #239)
+- TUI 型別建立精靈 — 標題面板中的多欄位精靈（emoji、名稱、複數），含即時 schema 預覽 (#230)
+- 彈性物件建立 — `tmd object create` 的型別參數現為選填（預設讀取 `cli.default_type`），名稱自動從自然語言轉換為 slug (#236, #240)
+- Frontmatter 身份優先排序 — 系統屬性以固定順序排列：`name`、`description`、`created_at`、`updated_at`、`tags` (#199)
+
+[v0.4.0]: https://github.com/typemd/typemd/releases/tag/v0.4.0
+
 ## [v0.3.0] - 2026-03-14
 
 ### 破壞性變更

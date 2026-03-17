@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [v0.4.0] - 2026-03-18
+
+### Added
+
+- Built-in Page Type — `page` (📄) is a new built-in type for free-form content, always available without a YAML file (#245)
+- Vault Health Check — `tmd doctor` scans for orphan directories, missing types, and other vault integrity issues (#19)
+- Vault Configuration — `tmd config get/set/list` manages persistent settings in `.typemd/config.yaml`; `cli.default_type` sets the default type for object creation (#241)
+- Starter Type Templates — `tmd init` offers optional starter schemas (idea 💡, note 📝, book 📚) to bootstrap new vaults (#235)
+- Type Schema Versioning — `version` field (semver `"major.minor"`) on type schemas for migration tracking (#45)
+- Type Schema Colors — `color` field supports preset names and hex codes for visual theming (#228)
+- Type & Property Descriptions — `description` field on type schemas and properties for documentation (#228)
+- TUI Template Management — view, edit, create, and delete object templates in the type editor (#250)
+- TUI Object Creation Wizard — inline title-panel input with live template preview and smart slug conversion (#229, #239)
+- TUI Type Creation Wizard — multi-field wizard (emoji, name, plural) in the title panel with live schema preview (#230)
+- Flexible Object Creation — `tmd object create` type is now optional (falls back to `cli.default_type`), names auto-convert from natural language to slugs (#236, #240)
+- Frontmatter Identity-First Ordering — system properties appear in consistent order: `name`, `description`, `created_at`, `updated_at`, `tags` (#199)
+
+[v0.4.0]: https://github.com/typemd/typemd/releases/tag/v0.4.0
+
 ## [v0.3.0] - 2026-03-14
 
 ### Breaking Changes
