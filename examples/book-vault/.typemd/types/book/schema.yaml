@@ -1,0 +1,30 @@
+name: book
+emoji: "\U0001F4DA"
+properties:
+    - name: title
+      type: string
+      emoji: "\U0001F4D6"
+    - name: status
+      type: select
+      emoji: "\U0001F4CB"
+      pin: 1
+      options:
+        - value: to-read
+        - value: reading
+        - value: done
+    - name: rating
+      type: number
+      emoji: ⭐
+      pin: 2
+    - name: published
+      type: date
+      emoji: "\U0001F4C5"
+    - name: favorite
+      type: checkbox
+      emoji: ❤️
+    - name: author
+      type: relation
+      emoji: ✍️
+      target: person
+      bidirectional: true
+      inverse: books

@@ -203,7 +203,8 @@ The properties panel is hidden by default and can be toggled with `p`. On narrow
 | `e` | Enter edit mode (body or properties panel) |
 | `/` | Search (FTS5 full-text search) |
 | `Esc` | Exit edit mode (auto-saves if changed) / Clear search results |
-| `p` | Toggle properties panel |
+| `v` | Open view mode for current type (table display with sort/filter) |
+| `p` | Toggle properties panel / Toggle preview in view mode |
 | `w` | Toggle soft wrap |
 | `[`/`]` | Shrink/grow focused panel |
 | `?`/`h` | Open help popup |
@@ -213,7 +214,7 @@ Navigate to `+ New Type` at the bottom of the sidebar and press `Enter` to creat
 
 Moving the cursor to a type group header automatically shows the **type editor** in the right panel, where you can edit type metadata (plural, emoji, unique), manage properties (add, delete, reorder, pin), manage templates (view, create, edit, delete), and delete the type. The type editor has its own keybindings shown in the status bar. Pressing Enter on a template opens the **template editor**, where you can view and edit the template body and properties inline.
 
-The status bar shows the current mode: `[VIEW]` for normal navigation, `[EDIT]` when editing is active, `[TYPE]` when the type editor is focused, `[TEMPLATE]` when viewing/editing a template, and `[READONLY]` when launched with `--readonly`.
+The status bar shows the current mode: `[VIEW]` for normal navigation, `[EDIT]` when editing is active, `[TYPE]` when the type editor is focused, `[TEMPLATE]` when viewing/editing a template, and `[READONLY]` when launched with `--readonly`. Press `v` on a type group to enter **view mode** — a full-width table showing objects with property columns, sort/filter support, and an optional preview panel (`p`).
 
 When `--readonly` is active, the `e` key is disabled, no write operations are performed, and the help popup hides edit-related keybindings.
 

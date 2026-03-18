@@ -159,6 +159,11 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	initPageSteps(ctx, dc)
 	initColorSteps(ctx, dc)
 	initDescriptionSteps(ctx, dc)
+	initTypeDirectorySteps(ctx, dc)
+	vcCtx := initViewConfigSteps(ctx, dc)
+	initViewCrudSteps(ctx, dc, vcCtx)
+	initQuerySortSteps(ctx, dc)
+	initFilterOperatorSteps(ctx, dc)
 }
 
 func TestFeatures(t *testing.T) {

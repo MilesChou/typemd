@@ -120,6 +120,29 @@ func updateNormal(m model, msg tea.KeyPressMsg) (model, tea.Cmd) {
 		}
 		return m, nil
 
+	case "v":
+		// Enter view mode for the current type
+		if m.focus == focusLeft && m.vault != nil {
+			typeName := m.currentTypeName()
+			if typeName != "" {
+				views, _ := m.vault.ListViews(typeName)
+				if len(views) <= 1 {
+					// No saved views or only default — enter directly
+					return m, func() tea.Msg {
+						return openViewMsg{TypeName: typeName, ViewName: "default"}
+					}
+				}
+				// Multiple views — show picker
+				var names []string
+				for _, v := range views {
+					names = append(names, v.Name)
+				}
+				m.viewPicker = newViewPicker(typeName, names)
+				return m, m.viewPicker.Init()
+			}
+		}
+		return m, nil
+
 	case "esc":
 		// Clear search results and return to normal list
 		if m.searchResults != nil {

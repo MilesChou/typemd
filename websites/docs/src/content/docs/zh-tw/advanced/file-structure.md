@@ -14,9 +14,14 @@ Vault 是一個具有特定結構的一般目錄：
 ```
 vault/
 ├── .typemd/
-│   ├── types/              # 使用者定義的 type schema（YAML）
-│   │   ├── book.yaml       # 範例：由你建立
-│   │   └── person.yaml     # 範例：由你建立
+│   ├── types/              # 使用者定義的 type schema（目錄格式）
+│   │   ├── book/
+│   │   │   ├── schema.yaml # type schema 定義
+│   │   │   └── views/      # 此 type 的已儲存 view（選填）
+│   │   │       ├── default.yaml
+│   │   │       └── by-rating.yaml
+│   │   └── person/
+│   │       └── schema.yaml
 │   ├── config.yaml         # vault 設定（選填）
 │   ├── properties.yaml     # 共用屬性定義（選填）
 │   ├── index.db            # SQLite 索引（自動更新）
@@ -75,10 +80,10 @@ book/golang-in-action-01jqr3k5mpbvn8e0f2g7h9txyz
 
 ## Type schema 檔案
 
-Type 以 YAML 檔案定義在 `.typemd/types/` 中。每個檔案描述型別的名稱、顯示設定和屬性：
+每個 type 以目錄形式儲存在 `.typemd/types/<name>/` 下，包含 `schema.yaml` 檔案：
 
 ```yaml
-# .typemd/types/book.yaml
+# .typemd/types/book/schema.yaml
 name: book
 plural: books
 unique: false
@@ -91,9 +96,33 @@ properties:
     target: person
 ```
 
-有兩個內建 type：`tag`（支援 `tags` 系統屬性，複數形式「tags」，`unique: true`）和 `page`（通用內容容器，複數形式「pages」，emoji 📄）。內建 type 無法刪除，但可以透過自訂 `.typemd/types/<name>.yaml` 檔案覆蓋。其他所有 type 都必須透過 `.typemd/types/*.yaml` 檔案定義。
+有兩個內建 type：`tag`（支援 `tags` 系統屬性，複數形式「tags」，`unique: true`）和 `page`（通用內容容器，複數形式「pages」，emoji 📄）。內建 type 無法刪除，但可以透過自訂 type schema 覆蓋。
+
+:::note
+舊版單檔格式（`.typemd/types/book.yaml`）會在首次載入時自動遷移為目錄格式（`book/schema.yaml`）。
+:::
 
 完整的 type schema 格式請參閱 [Type](/zh-tw/concepts/types)。
+
+## View
+
+每個 type 可以有多個已儲存的 view，定義物件的排序、篩選和顯示方式。View 以 YAML 檔案儲存在 `.typemd/types/<name>/views/`：
+
+```yaml
+# .typemd/types/book/views/by-rating.yaml
+name: by-rating
+layout: list
+sort:
+  - property: rating
+    direction: desc
+filter:
+  - property: status
+    operator: is
+    value: reading
+group_by: genre
+```
+
+每個 type 都有一個隱含的預設 view（list 佈局，按 name 升序排列）。自訂預設 view 後會儲存為 `views/default.yaml`。若沒有 view 檔案，type 目錄不需要 `views/` 子目錄。
 
 ## 共用屬性檔案
 

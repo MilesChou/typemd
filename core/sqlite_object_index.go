@@ -7,6 +7,20 @@ import (
 	"strings"
 )
 
+// isSafePropertyName checks that a property name contains only safe characters
+// for use in SQL expressions (alphanumeric and underscore).
+func isSafePropertyName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, c := range name {
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_') {
+			return false
+		}
+	}
+	return true
+}
+
 // SQLiteObjectIndex implements ObjectIndex using SQLite with FTS5.
 type SQLiteObjectIndex struct {
 	db *sql.DB
@@ -108,10 +122,10 @@ func scanObjectResults(rows *sql.Rows) ([]*ObjectResult, error) {
 	return results, rows.Err()
 }
 
-// Query queries objects using key=value filter syntax.
+// Query queries objects using key=value filter syntax with optional sort rules.
 // "type" filters on the type column; other keys filter on JSON properties.
 // An empty filter returns all objects.
-func (idx *SQLiteObjectIndex) Query(filter string) ([]*ObjectResult, error) {
+func (idx *SQLiteObjectIndex) Query(filter string, sort ...SortRule) ([]*ObjectResult, error) {
 	conditions, err := parseFilter(filter)
 	if err != nil {
 		return nil, fmt.Errorf("parse filter: %w", err)
@@ -133,6 +147,28 @@ func (idx *SQLiteObjectIndex) Query(filter string) ([]*ObjectResult, error) {
 
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// Add ORDER BY clauses from sort rules
+	if len(sort) > 0 {
+		var orderClauses []string
+		for _, s := range sort {
+			if !isSafePropertyName(s.Property) {
+				continue
+			}
+			dir := "ASC"
+			if s.Direction == "desc" {
+				dir = "DESC"
+			}
+			if s.Property == "type" {
+				orderClauses = append(orderClauses, "type "+dir)
+			} else {
+				orderClauses = append(orderClauses, fmt.Sprintf("json_extract(properties, '$.%s') %s", s.Property, dir))
+			}
+		}
+		if len(orderClauses) > 0 {
+			query += " ORDER BY " + strings.Join(orderClauses, ", ")
+		}
 	}
 
 	rows, err := idx.db.Query(query, args...)

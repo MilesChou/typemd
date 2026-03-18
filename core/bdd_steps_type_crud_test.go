@@ -214,17 +214,28 @@ func (tc *typeCrudContext) theRoundTripSchemaPropertyShouldHavePin(propName stri
 }
 
 func (tc *typeCrudContext) theTypeSchemaFileShouldNotExistOnDisk(name string) error {
+	// Check both formats don't exist
+	dirPath := filepath.Join(tc.dc.vault.TypesDir(), name, "schema.yaml")
+	if _, err := os.Stat(dirPath); err == nil {
+		return fmt.Errorf("expected type schema directory %s to not exist", dirPath)
+	}
 	path := filepath.Join(tc.dc.vault.TypesDir(), name+".yaml")
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		return fmt.Errorf("expected file %s to not exist", path)
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("expected type schema file %s to not exist", path)
 	}
 	return nil
 }
 
 func (tc *typeCrudContext) theTypeSchemaFileShouldExistOnDisk(name string) error {
+	// Check directory format first
+	dirPath := filepath.Join(tc.dc.vault.TypesDir(), name, "schema.yaml")
+	if _, err := os.Stat(dirPath); err == nil {
+		return nil
+	}
+	// Fall back to single file
 	path := filepath.Join(tc.dc.vault.TypesDir(), name+".yaml")
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("expected file %s to exist", path)
+		return fmt.Errorf("expected type schema %s to exist (checked %s and %s)", name, dirPath, path)
 	}
 	return nil
 }

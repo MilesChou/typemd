@@ -80,12 +80,12 @@ func objectResultsToObjects(results []*ObjectResult) []*Object {
 	return objects
 }
 
-// QueryObjects queries objects. Delegates to QueryService.
-func (v *Vault) QueryObjects(filter string) ([]*Object, error) {
+// QueryObjects queries objects with optional sort. Delegates to QueryService.
+func (v *Vault) QueryObjects(filter string, sort ...SortRule) ([]*Object, error) {
 	if v.Queries == nil {
 		return nil, fmt.Errorf("vault not opened")
 	}
-	return v.Queries.Query(filter)
+	return v.Queries.Query(filter, sort...)
 }
 
 // SearchObjects performs full-text search. Delegates to QueryService.

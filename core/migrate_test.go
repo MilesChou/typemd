@@ -11,7 +11,7 @@ func setupMigrateTestVault(t *testing.T) *Vault {
 	t.Helper()
 	v := setupTestVault(t)
 
-	// Initial schema with title and status
+	// Initial schema with title and status (directory format)
 	schema := []byte(`name: book
 properties:
   - name: title
@@ -19,8 +19,15 @@ properties:
   - name: status
     type: string
 `)
-	os.WriteFile(filepath.Join(v.TypesDir(), "book.yaml"), schema, 0644)
+	writeTestTypeSchema(v, "book", schema)
 	return v
+}
+
+// writeTestTypeSchema writes a type schema in directory format.
+func writeTestTypeSchema(v *Vault, typeName string, data []byte) {
+	dir := filepath.Join(v.TypesDir(), typeName)
+	os.MkdirAll(dir, 0755)
+	os.WriteFile(filepath.Join(dir, "schema.yaml"), data, 0644)
 }
 
 func TestVault_MigrateObjects_AddProperty(t *testing.T) {
@@ -41,7 +48,7 @@ properties:
     type: string
     default: "unknown"
 `)
-	os.WriteFile(filepath.Join(v.TypesDir(), "book.yaml"), newSchema, 0644)
+	writeTestTypeSchema(v, "book", newSchema)
 
 	result, err := v.MigrateObjects("book", MigrateOptions{})
 	if err != nil {
@@ -75,7 +82,7 @@ properties:
   - name: title
     type: string
 `)
-	os.WriteFile(filepath.Join(v.TypesDir(), "book.yaml"), newSchema, 0644)
+	writeTestTypeSchema(v, "book", newSchema)
 
 	result, err := v.MigrateObjects("book", MigrateOptions{})
 	if err != nil {
@@ -109,7 +116,7 @@ properties:
   - name: reading_status
     type: string
 `)
-	os.WriteFile(filepath.Join(v.TypesDir(), "book.yaml"), newSchema, 0644)
+	writeTestTypeSchema(v, "book", newSchema)
 
 	result, err := v.MigrateObjects("book", MigrateOptions{
 		Renames: map[string]string{"status": "reading_status"},
@@ -150,7 +157,7 @@ properties:
     type: string
     default: "unknown"
 `)
-	os.WriteFile(filepath.Join(v.TypesDir(), "book.yaml"), newSchema, 0644)
+	writeTestTypeSchema(v, "book", newSchema)
 
 	result, err := v.MigrateObjects("book", MigrateOptions{DryRun: true})
 	if err != nil {
@@ -232,7 +239,8 @@ func TestVault_MigrateObjects_DBNotOpen(t *testing.T) {
 func TestVault_MigrateSchemas_EnumToSelect(t *testing.T) {
 	v := setupMigrateTestVault(t)
 
-	// Write an old-style enum schema
+	// MigrateSchemas scans single files, so remove directory and write as single file
+	os.RemoveAll(filepath.Join(v.TypesDir(), "book"))
 	enumSchema := []byte(`name: book
 properties:
   - name: title
@@ -281,6 +289,7 @@ properties:
 func TestVault_MigrateSchemas_DryRun(t *testing.T) {
 	v := setupMigrateTestVault(t)
 
+	os.RemoveAll(filepath.Join(v.TypesDir(), "book"))
 	enumSchema := []byte(`name: book
 properties:
   - name: status
@@ -308,6 +317,7 @@ properties:
 func TestVault_MigrateSchemas_NoEnums(t *testing.T) {
 	v := setupMigrateTestVault(t)
 
+	os.RemoveAll(filepath.Join(v.TypesDir(), "book"))
 	schema := []byte(`name: book
 properties:
   - name: title
@@ -332,6 +342,7 @@ properties:
 func TestVault_MigrateSchemas_MultipleEnums(t *testing.T) {
 	v := setupMigrateTestVault(t)
 
+	os.RemoveAll(filepath.Join(v.TypesDir(), "book"))
 	schema := []byte(`name: book
 properties:
   - name: status

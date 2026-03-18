@@ -29,6 +29,7 @@ const (
 	panelObject                           // object detail view (existing behavior)
 	panelTypeEditor                       // type editor view
 	panelTemplate                         // template detail view
+	panelView                             // full-width view mode
 )
 
 type typeGroup struct {
@@ -47,6 +48,8 @@ type model struct {
 	rightPanel  rightPanelMode
 	typeEditor  *typeEditor          // non-nil when rightPanel == panelTypeEditor
 	tmplEditor  *templateEditor      // non-nil when rightPanel == panelTemplate
+	viewMode    *viewMode            // non-nil when rightPanel == panelView
+	viewPicker  *viewPicker          // non-nil when view selection popup is active
 	createType   *createTypeState    // non-nil when type creation flow is active
 	create       *createState        // non-nil when object creation flow is active
 
@@ -149,6 +152,13 @@ func (m model) Init() tea.Cmd {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// View picker needs to receive ALL message types (including huh internal msgs)
+	if m.viewPicker != nil {
+		vp, cmd := m.viewPicker.Update(msg)
+		m.viewPicker = vp
+		return m, cmd
+	}
+
 	switch msg := msg.(type) {
 	case focusLeftMsg:
 		m.focus = focusLeft
@@ -193,6 +203,17 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.focus = focusBody
 		if m.typeEditor != nil {
 			m.typeEditor.refreshTemplates()
+		}
+		return m, nil
+
+	case openViewMsg:
+		// Transition to full-width view mode
+		if m.vault != nil {
+			vm := newViewMode(msg.TypeName, msg.ViewName, m.vault)
+			vm.SetSize(m.width-2, m.height-3)
+			m.viewMode = vm
+			m.rightPanel = panelView
+			m.focus = focusBody
 		}
 		return m, nil
 
@@ -278,6 +299,40 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return updateCreate(m, msg)
 		case m.createType != nil:
 			return updateCreateType(m, msg)
+		case m.rightPanel == panelView && m.viewMode != nil:
+			// q/ctrl+c quits globally
+			if (msg.String() == "q" || msg.String() == "ctrl+c") && m.viewMode.CanQuit() {
+				if m.vault != nil {
+					saveSessionState(m.vault.Root, m.captureState())
+				}
+				return m, tea.Quit
+			}
+			// Esc navigates back: detail → list → sidebar
+			if msg.String() == "esc" {
+				if m.viewMode.detailObject != nil {
+					// Return from object detail to view list
+					m.viewMode.detailObject = nil
+					m.selected = nil
+					m.rightPanel = panelView
+					return m, nil
+				}
+				m.viewMode = nil
+				m.rightPanel = panelEmpty
+				m.focus = focusLeft
+				m.selectCurrentRow()
+				return m, nil
+			}
+			vm, cmd := m.viewMode.Update(msg)
+			m.viewMode = vm
+			// If an object was selected, load it into the normal detail view
+			if vm != nil && vm.detailObject != nil && m.selected != vm.detailObject {
+				obj, err := m.vault.GetObject(vm.detailObject.ID)
+				if err == nil {
+					m.applyLoadedObject(obj)
+					m.rightPanel = panelObject
+				}
+			}
+			return m, cmd
 		case m.rightPanel == panelTemplate && m.tmplEditor != nil && m.focus != focusLeft:
 			// q/ctrl+c quits globally unless in an interactive mode
 			if (msg.String() == "q" || msg.String() == "ctrl+c") && m.tmplEditor.CanQuit() {
@@ -367,6 +422,22 @@ func (m *model) refreshData() {
 }
 
 // currentRows returns the appropriate rows based on whether search results are active.
+// currentTypeName returns the type name at the cursor position in the sidebar.
+func (m *model) currentTypeName() string {
+	rows := m.currentRows()
+	if m.cursor < 0 || m.cursor >= len(rows) {
+		return ""
+	}
+	row := rows[m.cursor]
+	if row.Kind == rowNewType {
+		return ""
+	}
+	if row.GroupIndex >= 0 && row.GroupIndex < len(m.groups) {
+		return m.groups[row.GroupIndex].Name
+	}
+	return ""
+}
+
 func (m *model) currentRows() []listRow {
 	if m.searchResults != nil {
 		return searchResultRows(m.searchResults)
@@ -648,6 +719,72 @@ func (m model) View() tea.View {
 		return tea.NewView("Loading...")
 	}
 
+	// Full-width view mode takes over the entire screen
+	if m.rightPanel == panelView && m.viewMode != nil {
+		contentH := m.height - 3
+		if contentH < 0 {
+			contentH = 0
+		}
+		bdr := 2
+		vm := m.viewMode
+
+		titleStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			Width(m.width - bdr).
+			Height(titlePanelHeight)
+		titleText := vm.titleContent()
+
+		bodyH := contentH - titlePanelHeight
+
+		var bodyContent string
+		if vm.HasPreview() {
+			// Split: table on left, preview on right
+			previewW := m.width * 2 / 5 // 40% for preview
+			tableW := m.width - previewW - bdr - 2 // -2 for gap between panels
+
+			vm.SetSize(tableW-bdr, bodyH-bdr)
+
+			tableStyle := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				Width(tableW).
+				Height(bodyH).
+				MaxHeight(bodyH)
+
+			previewStyle := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("8")).
+				Width(previewW).
+				Height(bodyH).
+				MaxHeight(bodyH)
+
+			bodyContent = lipgloss.JoinHorizontal(lipgloss.Top,
+				tableStyle.Render(vm.View()),
+				previewStyle.Render(vm.PreviewContent()),
+			)
+		} else {
+			// Full-width table
+			vm.SetSize(m.width-bdr-2, bodyH-bdr)
+
+			bodyStyle := lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				Width(m.width - bdr).
+				Height(bodyH).
+				MaxHeight(bodyH)
+
+			bodyContent = bodyStyle.Render(vm.View())
+		}
+
+		panels := lipgloss.JoinVertical(lipgloss.Left,
+			titleStyle.Render(titleText),
+			bodyContent,
+		)
+
+		helpBar := "  " + vm.HelpBar()
+		v := tea.NewView(panels + "\n" + helpBar)
+		v.AltScreen = true
+		return v
+	}
+
 	// Help overlay takes over the entire screen
 	if m.showHelp {
 		v := tea.NewView(renderHelp(m.width, m.height, m.readOnly))
@@ -761,6 +898,8 @@ func (m model) View() tea.View {
 		if editorW < 10 {
 			editorW = 10
 		}
+		// Set type editor content height for scroll support
+		m.typeEditor.height = bodyPropsContentH
 		editorStyle := lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			Width(editorW + bdr).
@@ -888,6 +1027,11 @@ func (m model) View() tea.View {
 		if overlay := m.typeEditor.Overlay(m.width, m.height); overlay != "" {
 			screen = overlay
 		}
+	}
+
+	// View picker overlay
+	if m.viewPicker != nil {
+		screen = m.viewPicker.View(m.width, m.height)
 	}
 
 	v := tea.NewView(screen)

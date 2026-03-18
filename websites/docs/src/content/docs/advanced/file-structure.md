@@ -14,9 +14,14 @@ A Vault is a regular directory with a specific structure:
 ```
 vault/
 ├── .typemd/
-│   ├── types/              # user-defined type schemas (YAML)
-│   │   ├── book.yaml       # example: you create this
-│   │   └── person.yaml     # example: you create this
+│   ├── types/              # user-defined type schemas (directory format)
+│   │   ├── book/
+│   │   │   ├── schema.yaml # type schema definition
+│   │   │   └── views/      # saved views for this type (optional)
+│   │   │       ├── default.yaml
+│   │   │       └── by-rating.yaml
+│   │   └── person/
+│   │       └── schema.yaml
 │   ├── config.yaml         # vault configuration (optional)
 │   ├── properties.yaml     # shared property definitions (optional)
 │   ├── index.db            # SQLite index (auto-updated)
@@ -75,10 +80,10 @@ For details on the frontmatter format and how to edit it manually, see [Frontmat
 
 ## Type schema files
 
-Types are defined as YAML files in `.typemd/types/`. Each file describes a type's name, display settings, and properties:
+Each type is stored as a directory under `.typemd/types/<name>/` containing a `schema.yaml` file:
 
 ```yaml
-# .typemd/types/book.yaml
+# .typemd/types/book/schema.yaml
 name: book
 plural: books
 color: blue
@@ -93,7 +98,31 @@ properties:
     target: person
 ```
 
-Two types are built-in: `tag` (backs the `tags` system property, plural "tags", `unique: true`) and `page` (general-purpose content container, plural "pages", emoji 📄). Built-in types cannot be deleted but can be overridden by custom `.typemd/types/<name>.yaml` files. All other types must be defined via `.typemd/types/*.yaml` files.
+Two types are built-in: `tag` (backs the `tags` system property, plural "tags", `unique: true`) and `page` (general-purpose content container, plural "pages", emoji 📄). Built-in types cannot be deleted but can be overridden by custom type schemas.
+
+:::note
+Legacy single-file format (`.typemd/types/book.yaml`) is automatically migrated to directory format (`book/schema.yaml`) on first load.
+:::
+
+## Views
+
+Each type can have saved views that define how objects are filtered, sorted, and displayed. Views are stored as YAML files under `.typemd/types/<name>/views/`:
+
+```yaml
+# .typemd/types/book/views/by-rating.yaml
+name: by-rating
+layout: list
+sort:
+  - property: rating
+    direction: desc
+filter:
+  - property: status
+    operator: is
+    value: reading
+group_by: genre
+```
+
+Every type has an implicit default view (list layout, sorted by name ascending). When you customize the default view, it is saved as `views/default.yaml`. If no view files exist, the type directory does not need a `views/` subdirectory.
 
 For the full type schema format, see [Types](/concepts/types).
 

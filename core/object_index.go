@@ -17,6 +17,12 @@ type WikiLinkEntry struct {
 	DisplayText string
 }
 
+// SortRule defines a single sort criterion for query results.
+type SortRule struct {
+	Property  string `yaml:"property"`
+	Direction string `yaml:"direction"` // "asc" or "desc"
+}
+
 // ObjectIndex provides search, query, and discovery operations backed by
 // an indexed read model. Query methods return lightweight ObjectResult
 // projections, not full domain entities.
@@ -24,7 +30,7 @@ type WikiLinkEntry struct {
 // It also exposes write methods used by the Projector to maintain the index.
 type ObjectIndex interface {
 	// Query operations — the read side of CQRS
-	Query(filter string) ([]*ObjectResult, error)
+	Query(filter string, sort ...SortRule) ([]*ObjectResult, error)
 	Search(keyword string) ([]*ObjectResult, error)
 	FindRelations(objectID string) ([]Relation, error)
 	FindBacklinks(objectID string) ([]StoredWikiLink, error)

@@ -98,3 +98,11 @@ TypeMD uses lenient validation:
 - `url` must start with http:// or https://
 - `relation` targets are checked for correct type
 - Property names `description`, `created_at`, `updated_at`, and `tags` are reserved for [system properties](/advanced/file-structure#system-properties) and cannot be used in type schemas. `name` can appear in `properties` only with a `template` field (for [name templates](/basics/templates#name-templates)).
+
+## Views
+
+Each type can have one or more **views** — saved configurations that control how objects are displayed (sorted, filtered, grouped). Views are stored alongside the type schema in `.typemd/types/<name>/views/`.
+
+Every type has an implicit default view (list layout, sorted by name). You can create custom views with different sort orders, filters, and grouping. In the TUI, press `v` on a type group to enter [view mode](/tui/tui#view-mode--table-display).
+
+For details on view configuration format, see [File Structure: Views](/advanced/file-structure#views). For filter operators, see [Queries: Filter operators](/basics/queries#filter-operators).

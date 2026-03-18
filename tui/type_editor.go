@@ -35,6 +35,7 @@ const (
 	teModeDeleteProp                // delete property confirmation
 	teModeDeleteType                // delete type confirmation
 	teModeAddTemplate               // entering new template name
+	teModeAddView                   // entering new view name
 )
 
 // metaFieldCount is the number of meta fields at the top of the editor:
@@ -71,9 +72,14 @@ type typeEditor struct {
 	tmplCursor    int              // cursor within templates list
 	tmplNameInput textinput.Model  // name input for adding template
 
+	// View management
+	views         []string        // cached view names for this type
+	viewNameInput textinput.Model // name input for adding view
+
 	// Layout
-	width  int
-	height int
+	width        int
+	height       int
+	scrollOffset int
 
 	// Status
 	saveErr string
@@ -124,9 +130,21 @@ func newTypeEditor(schema *core.TypeSchema, typeName string, isNew bool, vault *
 	tmplInput.Placeholder = "template name"
 	tmplInput.CharLimit = 50
 
+	viewInput := textinput.New()
+	viewInput.Placeholder = "view name"
+	viewInput.CharLimit = 50
+
 	var templates []string
 	if vault != nil {
 		templates, _ = vault.ListTemplates(typeName)
+	}
+
+	var views []string
+	if vault != nil {
+		viewConfigs, _ := vault.ListViews(typeName)
+		for _, v := range viewConfigs {
+			views = append(views, v.Name)
+		}
 	}
 
 	return &typeEditor{
@@ -137,6 +155,8 @@ func newTypeEditor(schema *core.TypeSchema, typeName string, isNew bool, vault *
 		editInput:     ti,
 		templates:     templates,
 		tmplNameInput: tmplInput,
+		views:         views,
+		viewNameInput: viewInput,
 	}
 }
 
@@ -174,6 +194,10 @@ const addPropertySentinel = -100
 const addTemplateSentinel = -200
 const templateSentinelBase = -300 // templates use -300, -301, -302, ...
 
+// Sentinel values for view management in displayItems.
+const addViewSentinel = -250
+const viewSentinelBase = -400 // views use -400, -401, -402, ...
+
 // displayItems returns the flat list of cursor-addressable items.
 // Items 0..5 are meta fields, then pinned properties, then unpinned properties,
 // then the "+ Add Property" action row.
@@ -193,13 +217,18 @@ func (te *typeEditor) displayItems() []int {
 		items = append(items, templateSentinelBase-i)
 	}
 	items = append(items, addTemplateSentinel)
+	// View items
+	for i := range te.views {
+		items = append(items, viewSentinelBase-i)
+	}
+	items = append(items, addViewSentinel)
 	return items
 }
 
 // totalItems returns the total number of cursor-addressable items.
 func (te *typeEditor) totalItems() int {
-	return metaFieldCount + len(te.schema.Properties) + 1 + len(te.templates) + 1
-	// meta + properties + addProperty + templates + addTemplate
+	return metaFieldCount + len(te.schema.Properties) + 1 + len(te.templates) + 1 + len(te.views) + 1
+	// meta + properties + addProperty + templates + addTemplate + views + addView
 }
 
 // save persists the current schema to disk.
@@ -238,6 +267,8 @@ func (te *typeEditor) Update(msg tea.Msg) (*typeEditor, tea.Cmd) {
 		return te.updateDeleteType(keyMsg)
 	case teModeAddTemplate:
 		return te.updateAddTemplate(keyMsg)
+	case teModeAddView:
+		return te.updateAddView(keyMsg)
 	}
 	return te, nil
 }
@@ -278,6 +309,20 @@ func (te *typeEditor) updateView(msg tea.KeyPressMsg) (*typeEditor, tea.Cmd) {
 				te.startAddWizard()
 			case item == addTemplateSentinel:
 				te.startAddTemplate()
+			case item == addViewSentinel:
+				te.startAddView()
+			case item <= viewSentinelBase:
+				// View item — signal parent to open view mode
+				viewIdx := viewSentinelBase - item
+				if viewIdx >= 0 && viewIdx < len(te.views) {
+					viewName := te.views[viewIdx]
+					return te, func() tea.Msg {
+						return openViewMsg{
+							TypeName: te.typeName,
+							ViewName: viewName,
+						}
+					}
+				}
 			case item <= templateSentinelBase:
 				// Template item — signal parent to open template
 				tmplIdx := templateSentinelBase - item
@@ -313,7 +358,7 @@ func (te *typeEditor) startEdit() {
 		return
 	}
 	item := items[te.cursor]
-	if item == addPropertySentinel || item == addTemplateSentinel || item <= templateSentinelBase {
+	if item == addPropertySentinel || item == addTemplateSentinel || item == addViewSentinel || item <= templateSentinelBase {
 		return
 	}
 
@@ -969,6 +1014,65 @@ func (te *typeEditor) refreshTemplates() {
 	}
 }
 
+func (te *typeEditor) refreshViews() {
+	if te.vault != nil {
+		views, _ := te.vault.ListViews(te.typeName)
+		te.views = make([]string, len(views))
+		for i, v := range views {
+			te.views[i] = v.Name
+		}
+	}
+}
+
+func (te *typeEditor) startAddView() {
+	te.viewNameInput.SetValue("")
+	te.viewNameInput.Focus()
+	te.mode = teModeAddView
+	te.saveErr = ""
+}
+
+func (te *typeEditor) updateAddView(msg tea.KeyPressMsg) (*typeEditor, tea.Cmd) {
+	switch msg.String() {
+	case "enter":
+		name := strings.TrimSpace(te.viewNameInput.Value())
+		if name == "" {
+			return te, nil
+		}
+		// Check for duplicate
+		for _, v := range te.views {
+			if v == name {
+				te.saveErr = fmt.Sprintf("view %q already exists", name)
+				return te, nil
+			}
+		}
+		// Create view with default config
+		if te.vault != nil {
+			view := &core.ViewConfig{
+				Name:   name,
+				Layout: core.ViewLayoutList,
+				Sort:   []core.SortRule{{Property: "name", Direction: "asc"}},
+			}
+			if err := te.vault.SaveView(te.typeName, view); err != nil {
+				te.saveErr = err.Error()
+				return te, nil
+			}
+		}
+		te.saveErr = ""
+		te.refreshViews()
+		te.viewNameInput.Blur()
+		te.mode = teModeView
+		return te, nil
+	case "esc":
+		te.viewNameInput.Blur()
+		te.mode = teModeView
+		te.saveErr = ""
+		return te, nil
+	}
+	var cmd tea.Cmd
+	te.viewNameInput, cmd = te.viewNameInput.Update(msg)
+	return te, cmd
+}
+
 // View renders the type editor panel.
 func (te *typeEditor) View() string {
 	if te.mode == teModeAddWizard && te.wizard != nil {
@@ -978,6 +1082,16 @@ func (te *typeEditor) View() string {
 	var b strings.Builder
 	items := te.displayItems()
 	pinned, unpinned := te.orderedProperties()
+	lineNum := 0       // tracks current line number
+	cursorLine := 0    // line where cursor item is rendered
+	writeLine := func(s string) {
+		b.WriteString(s + "\n")
+		lineNum++
+	}
+	writeBlank := func() {
+		b.WriteString("\n")
+		lineNum++
+	}
 
 	// Meta fields
 	metaLabels := []string{"Name", "Plural", "Emoji", "Color", "Unique", "Description"}
@@ -996,9 +1110,22 @@ func (te *typeEditor) View() string {
 
 
 
+	// Helper to find cursor position for a sentinel/item value
+	findCursorPos := func(target int) int {
+		for i, item := range items {
+			if item == target {
+				return i
+			}
+		}
+		return -1
+	}
+
 	for i := 0; i < metaFieldCount; i++ {
+		if te.cursor == i {
+			cursorLine = lineNum
+		}
 		if (te.mode == teModeEditMeta) && te.editField == i {
-			b.WriteString(fmt.Sprintf("  %s: %s\n", metaLabels[i], te.editInput.View()))
+			writeLine(fmt.Sprintf("  %s: %s", metaLabels[i], te.editInput.View()))
 		} else {
 			val := metaValues[i]
 			if val == "" {
@@ -1006,110 +1133,175 @@ func (te *typeEditor) View() string {
 			}
 			lineContent := fmt.Sprintf("%s: %s", metaLabels[i], val)
 			if te.cursor == i {
-				b.WriteString(" " + highlightStyle.Render(" "+lineContent+" ") + "\n")
+				writeLine(" " + highlightStyle.Render(" "+lineContent+" "))
 			} else {
-				b.WriteString("  " + lineContent + "\n")
+				writeLine("  " + lineContent)
 			}
 		}
 	}
 
-	b.WriteString("\n")
+	writeBlank()
 
 	// Pinned section — only shown when there are pinned properties
 	if len(pinned) > 0 {
-		b.WriteString(" ── Pinned (Header) ──\n")
+		writeLine(" ── Pinned (Header) ──")
 		for _, idx := range pinned {
+			pos := findCursorPos(idx)
+			if te.cursor == pos {
+				cursorLine = lineNum
+			}
 			te.renderPropertyRow(&b, items, idx)
+			lineNum++
 		}
-		b.WriteString("\n")
+		writeBlank()
 	}
 
 	// Properties section
-	b.WriteString(" ── Properties ──\n")
+	writeLine(" ── Properties ──")
 	if len(unpinned) == 0 && len(pinned) > 0 {
-		b.WriteString("  (none)\n")
+		writeLine("  (none)")
 	}
 	for _, idx := range unpinned {
+		pos := findCursorPos(idx)
+		if te.cursor == pos {
+			cursorLine = lineNum
+		}
 		te.renderPropertyRow(&b, items, idx)
+		lineNum++
 	}
 
-	// "+ Add Property" row — always at the end, cursor-selectable
-	addPropContent := "+ Add Property"
-	isAddCurrent := false
-	for i, item := range items {
-		if item == addPropertySentinel && te.cursor == i {
-			isAddCurrent = true
-			break
-		}
-	}
-	if isAddCurrent {
-		b.WriteString(" " + highlightStyle.Render(" "+addPropContent+" ") + "\n")
+	// "+ Add Property" row
+	addPos := findCursorPos(addPropertySentinel)
+	if te.cursor == addPos {
+		cursorLine = lineNum
+		writeLine(" " + highlightStyle.Render(" + Add Property "))
 	} else {
-		b.WriteString("  " + addPropContent + "\n")
+		writeLine("  + Add Property")
 	}
 
 	// Templates section
-	b.WriteString("\n")
-	b.WriteString(" ── Templates ──\n")
+	writeBlank()
+	writeLine(" ── Templates ──")
 	if len(te.templates) == 0 {
-		b.WriteString("  (none)\n")
+		writeLine("  (none)")
 	} else {
 		for tmplI, tmplName := range te.templates {
-			sentinel := templateSentinelBase - tmplI
-			cursorPos := -1
-			for i, item := range items {
-				if item == sentinel {
-					cursorPos = i
-					break
-				}
+			pos := findCursorPos(templateSentinelBase - tmplI)
+			if te.cursor == pos {
+				cursorLine = lineNum
 			}
-			isCurrent := te.cursor == cursorPos
 			lineContent := fmt.Sprintf("📝 %s", tmplName)
-			if isCurrent {
-				b.WriteString(" " + highlightStyle.Render(" "+lineContent+" ") + "\n")
+			if te.cursor == pos {
+				writeLine(" " + highlightStyle.Render(" "+lineContent+" "))
 			} else {
-				b.WriteString("  " + lineContent + "\n")
+				writeLine("  " + lineContent)
 			}
 		}
 	}
 
 	// "+ Add Template" row
-	addTmplContent := "+ Add Template"
-	isAddTmplCurrent := false
-	for i, item := range items {
-		if item == addTemplateSentinel && te.cursor == i {
-			isAddTmplCurrent = true
-			break
+	addTmplPos := findCursorPos(addTemplateSentinel)
+	if te.mode == teModeAddTemplate {
+		cursorLine = lineNum
+		writeLine(fmt.Sprintf("  + %s", te.tmplNameInput.View()))
+	} else if te.cursor == addTmplPos {
+		cursorLine = lineNum
+		writeLine(" " + highlightStyle.Render(" + Add Template "))
+	} else {
+		writeLine("  + Add Template")
+	}
+
+	// Views section
+	writeBlank()
+	writeLine(" ── Views ──")
+	if len(te.views) == 0 {
+		writeLine("  (default only)")
+	} else {
+		for viewI, viewName := range te.views {
+			pos := findCursorPos(viewSentinelBase - viewI)
+			if te.cursor == pos {
+				cursorLine = lineNum
+			}
+			lineContent := fmt.Sprintf("🔍 %s", viewName)
+			if te.cursor == pos {
+				writeLine(" " + highlightStyle.Render(" "+lineContent+" "))
+			} else {
+				writeLine("  " + lineContent)
+			}
 		}
 	}
-	if te.mode == teModeAddTemplate {
-		b.WriteString(fmt.Sprintf("  + %s\n", te.tmplNameInput.View()))
-	} else if isAddTmplCurrent {
-		b.WriteString(" " + highlightStyle.Render(" "+addTmplContent+" ") + "\n")
+
+	// "+ Add View" row
+	addViewPos := findCursorPos(addViewSentinel)
+	if te.mode == teModeAddView {
+		cursorLine = lineNum
+		writeLine(fmt.Sprintf("  + %s", te.viewNameInput.View()))
+	} else if te.cursor == addViewPos {
+		cursorLine = lineNum
+		writeLine(" " + highlightStyle.Render(" + Add View "))
 	} else {
-		b.WriteString("  " + addTmplContent + "\n")
+		writeLine("  + Add View")
 	}
 
 	// Delete confirmation
 	if te.mode == teModeDeleteProp {
-		b.WriteString("\n")
+		writeBlank()
 		propIdx := items[te.cursor]
 		if propIdx >= 0 && propIdx < len(te.schema.Properties) {
-			b.WriteString(fmt.Sprintf(" Delete property '%s'? [y/n]\n", te.schema.Properties[propIdx].Name))
+			writeLine(fmt.Sprintf(" Delete property '%s'? [y/n]", te.schema.Properties[propIdx].Name))
 		}
 	}
 
 	if te.mode == teModeDeleteType {
-		b.WriteString("\n")
-		b.WriteString(fmt.Sprintf(" Delete type '%s'? [y/n]\n", te.typeName))
+		writeBlank()
+		writeLine(fmt.Sprintf(" Delete type '%s'? [y/n]", te.typeName))
 	}
 
 	// Error
 	if te.saveErr != "" {
-		b.WriteString(fmt.Sprintf("\n [ERROR] %s\n", te.saveErr))
+		writeBlank()
+		writeLine(fmt.Sprintf(" [ERROR] %s", te.saveErr))
 	}
 
-	return b.String()
+	return te.applyScroll(b.String(), cursorLine)
+}
+
+// applyScroll trims the rendered content to fit within the available height,
+// keeping the cursor-highlighted line visible. cursorLine is the 0-based line
+// index where the cursor item is rendered.
+func (te *typeEditor) applyScroll(content string, cursorLine int) string {
+	if te.height <= 0 {
+		return content
+	}
+
+	lines := strings.Split(content, "\n")
+	// Remove trailing empty line from final \n
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
+	}
+
+	visibleH := te.height
+	if len(lines) <= visibleH {
+		return content
+	}
+
+	// Adjust scroll offset to keep cursor visible
+	if cursorLine < te.scrollOffset {
+		te.scrollOffset = cursorLine
+	}
+	if cursorLine >= te.scrollOffset+visibleH {
+		te.scrollOffset = cursorLine - visibleH + 1
+	}
+	if te.scrollOffset < 0 {
+		te.scrollOffset = 0
+	}
+
+	end := te.scrollOffset + visibleH
+	if end > len(lines) {
+		end = len(lines)
+	}
+
+	return strings.Join(lines[te.scrollOffset:end], "\n")
 }
 
 func (te *typeEditor) renderPropertyRow(b *strings.Builder, items []int, propIdx int) {
@@ -1250,6 +1442,8 @@ func (te *typeEditor) HelpBar() string {
 		return "  [DELETE TYPE]  y: confirm  n/esc: cancel"
 	case teModeAddTemplate:
 		return "  [NEW TEMPLATE]  enter: create  esc: cancel"
+	case teModeAddView:
+		return "  [NEW VIEW]  enter: create  esc: cancel"
 	}
 	return ""
 }

@@ -86,6 +86,7 @@ The default mode. Browse objects and types in the sidebar.
 | `Enter` | Select object / Focus type editor |
 | `Space` | Toggle group expand/collapse |
 | `Tab` | Cycle focus between panels |
+| `v` | Open view mode for the current type |
 | `n` | Create new object & edit body (in current type group) |
 | `N` | Quick create — batch mode (in current type group) |
 | `e` | Enter edit mode (when body panel focused) |
@@ -95,6 +96,26 @@ The default mode. Browse objects and types in the sidebar.
 | `[`/`]` | Shrink/grow focused panel |
 | `?`/`h` | Open help popup |
 | `q`/`Ctrl+C` | Quit |
+
+### View Mode — Table Display
+
+Press `v` on a type group header or object to enter **view mode**. This replaces the three-panel layout with a full-width table showing objects with property columns.
+
+| Key | Action |
+|-----|--------|
+| `↑`/`k`, `↓`/`j` | Navigate rows |
+| `Enter` | Open object detail (three-panel view) |
+| `p` | Toggle preview panel (right side) |
+| `Esc` | Return to sidebar |
+| `q`/`Ctrl+C` | Quit |
+
+The table displays the object name followed by property columns (pinned properties first). The number of columns adjusts to the terminal width.
+
+When **preview** is active (`p`), the right side shows the selected object's properties and body content. The preview follows the cursor as you navigate.
+
+If the type has multiple saved [views](/advanced/file-structure#views), a selection popup appears when pressing `v`. If only the default view exists, it opens directly.
+
+The type editor also shows a **Views** section where you can browse saved views and create new ones with `+ Add View`.
 
 ### `[TYPE]` — Type Editor
 

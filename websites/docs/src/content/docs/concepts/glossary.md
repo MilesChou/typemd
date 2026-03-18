@@ -59,6 +59,12 @@ Provides default frontmatter and body content when creating new Objects. Object 
 
 [Learn more →](/basics/templates)
 
+## View
+
+A saved configuration that controls how Objects of a Type are displayed — including sort order, filter rules, grouping, and layout. Views are stored as YAML files in `.typemd/types/<name>/views/`. Every Type has an implicit default View (list layout, sorted by name).
+
+[Learn more →](/advanced/file-structure#views)
+
 ## Slug
 
 The human-readable part of an Object's filename. For example, `golang-in-action` in `book/golang-in-action-01jqr3k5mpbvn8e0f2g7h9txyz.md`. Derived from the name you provide when creating an Object.

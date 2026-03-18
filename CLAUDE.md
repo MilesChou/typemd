@@ -121,7 +121,7 @@ graph LR
 | `object.go` | Object entity (aggregate root) + Vault facade methods |
 | `object_id.go` | ObjectID value object |
 | `object_repository.go` | ObjectRepository interface |
-| `object_index.go` | ObjectIndex interface + ObjectResult |
+| `object_index.go` | ObjectIndex interface + ObjectResult + SortRule |
 | `object_service.go` | ObjectService (command use cases) |
 | `query_service.go` | QueryService (query use cases) |
 | `local_object_repository.go` | LocalObjectRepository (file I/O) |
@@ -136,6 +136,8 @@ graph LR
 | `vault_config.go` | VaultConfig struct + YAML loading + WriteConfig + DefaultType() + GetConfigValue/SetConfigValue/ConfigKeys (key registry) |
 | `slugify.go` | Slugify() function for converting natural-language names to valid slugs |
 | `template.go` | Template entity + Vault facade methods (ListTemplates/LoadTemplate/SaveTemplate/DeleteTemplate) |
+| `view.go` | ViewConfig/FilterRule structs + ViewLayout constants + Vault view CRUD (ListViews/LoadView/SaveView/DeleteView/DefaultView) |
+| `filter_operator.go` | Type-aware filter operator registry (validOperators) + FilterRuleToSQL translation + ValidateFilterOperator |
 
 ### TUI Architecture
 
@@ -145,8 +147,9 @@ The TUI uses a three-panel layout (sidebar, body, properties) with a **right pan
 - `panelObject` — object detail view (body + properties)
 - `panelTypeEditor` — type schema editor (independent sub-model `typeEditor` in `tui/type_editor.go`)
 - `panelTemplate` — template detail view (independent sub-model `templateEditor` in `tui/template_editor.go`)
+- `panelView` — full-width view mode (independent sub-model `viewMode` in `tui/view_mode.go`)
 
-The right panel automatically follows the sidebar cursor: moving to an object shows its detail, moving to a type header shows the type editor. The `typeEditor` sub-model has its own `Update()`/`View()` methods and internal mode state (view, edit, move, add wizard, delete confirmation, property detail popup). The type editor includes a Templates section listing available templates; pressing Enter on a template transitions to `panelTemplate` mode. The `templateEditor` sub-model supports viewing, inline editing (body + properties), creating, and deleting templates.
+The right panel automatically follows the sidebar cursor: moving to an object shows its detail, moving to a type header shows the type editor. The `typeEditor` sub-model has its own `Update()`/`View()` methods and internal mode state (view, edit, move, add wizard, delete confirmation, property detail popup). The type editor includes a Templates section listing available templates; pressing Enter on a template transitions to `panelTemplate` mode. The `templateEditor` sub-model supports viewing, inline editing (body + properties), creating, and deleting templates. The type editor also includes a Views section listing saved views; pressing Enter on a view or pressing `v` from the sidebar transitions to `panelView` mode — a full-width list that replaces the three-panel layout. Navigation stack: sidebar → view list (Enter opens object) → object detail (Esc returns to view list) → Esc exits view mode.
 
 Type creation uses a **title panel wizard** (`createTypeState` in `tui/create_type.go`): triggered via `+ New Type`, it transforms the title panel into a multi-field form (emoji, name, plural) with Tab cycling and a live type schema preview in the right panel. After creation, the type editor opens automatically.
 
@@ -154,7 +157,8 @@ Type creation uses a **title panel wizard** (`createTypeState` in `tui/create_ty
 
 - Objects identified by `type/<slug>-<ulid>` (e.g. `book/golang-in-action-01jqr3k5mpbvn8e0f2g7h9txyz`)
 - All objects have system properties managed by typemd: `name` (preserves original input on creation; auto-populated from slug for pre-slugified names, or from name template if defined), `description` (optional, user-authored), `created_at` (set on creation, immutable), `updated_at` (updated on save, immutable), `tags` (relation to built-in `tag` type, multiple). These appear first in frontmatter in that order. System properties are either **user-authored** (`name`, `description`, `tags` — can be overridden by templates) or **auto-managed** (`created_at`, `updated_at` — cannot be overridden).
-- Type schemas: `.typemd/types/*.yaml` (cannot define properties named `description`, `created_at`, `updated_at`, or `tags` — they're reserved system properties; `name` can appear in `properties` with only a `template` field for auto-generated names). Type schemas support optional `plural` (for display in collection contexts), `unique` (to enforce name uniqueness), `version` (semver-style `"major.minor"` string for schema migration tracking, default `"0.0"`), `color` (preset name or `#RGB`/`#RRGGBB` hex for visual theming), and `description` (free-text type documentation) fields. Properties also support an optional `description` field for documenting their purpose.
+- Type schemas: `.typemd/types/<name>/schema.yaml` (directory format) or `.typemd/types/<name>.yaml` (legacy single-file, auto-migrated to directory on load). Cannot define properties named `description`, `created_at`, `updated_at`, or `tags` — they're reserved system properties; `name` can appear in `properties` with only a `template` field for auto-generated names. Type schemas support optional `plural` (for display in collection contexts), `unique` (to enforce name uniqueness), `version` (semver-style `"major.minor"` string for schema migration tracking, default `"0.0"`), `color` (preset name or `#RGB`/`#RRGGBB` hex for visual theming), and `description` (free-text type documentation) fields. Properties also support an optional `description` field for documenting their purpose.
+- Views: `.typemd/types/<name>/views/<view>.yaml` (optional, defines filter + sort + group_by + layout for presenting objects of a type). Each type has an implicit default view (list layout, sort by name asc) that materializes as `views/default.yaml` when customized. ViewConfig is in core; layout rendering is in TUI.
 - Built-in types: `tag` (🏷️, plural "tags", unique, backs `tags` system property) and `page` (📄, plural "pages", general-purpose content container). Built-in types exist without YAML files, cannot be deleted, but can be overridden by custom `.typemd/types/<name>.yaml`.
 - Shared properties: `.typemd/properties.yaml` (optional, defines reusable property definitions referenced via `use` in type schemas; `use` entries can override `pin`, `emoji`, and `description`)
 - Relations defined as properties in type schemas
